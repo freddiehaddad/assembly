@@ -281,10 +281,12 @@ or
 movq   16(%rsp), %rax
 ```
 
-With the return value placed in the proper register, it's time to tear down the stack and return to the caller.  To do this, a few things need to happen.
+With the return value placed in the proper register, it's time to tear down the stack and return to the caller.
+
+To accomplish this, a few things need to happen:
 
 1. We need to tear down the stack
-2. Restore the previous values in the `rsp` and `bsp` registers.
+2. Restore the previous values in the `rsp` and `rbp` registers.
 3. Update the instruction pointer (`rip`) to the next instruction in the caller's function.
 
 Let's start with restoring the stack by thinking about how we created this stack frame.
