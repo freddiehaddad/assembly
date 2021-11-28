@@ -83,7 +83,7 @@ int bar()
 }
 ```
 
-For simplicity, we will assume ILP-64 -- meaning integers and pointers are all 64-bit (8 bytes).  Program flow will be captured starting inside `bar`, ignoring how we got to this point.  We'll walk through the calling convention from this point.
+For simplicity, we will assume ILP-64 -- meaning integers and pointers are all 64-bit (8 bytes).  Program flow will be captured starting inside `bar`, ignoring how we got to this point.  We'll walk through the calling convention from here.
 
 If we were to imagine the stack at the moment program flow moves to `bar`, it might like this:
 
