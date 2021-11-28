@@ -180,8 +180,8 @@ We are now ready to set up the call to `foo`.
 
 As per the AMD64 calling convention, the following registers are used for the first two arguments to a function:
 
-* `rdi` is used to pass the 1st argument to a function
-* `rsi` is used to pass the 2nd argument to a function
+* `rdi` is used to pass the 1st argument
+* `rsi` is used to pass the 2nd argument
 
 This can be achieved as follows:
 
