@@ -90,7 +90,7 @@ int bar()
 }
 ```
 
-For simplicity, we will assume ILP-64 -- meaning integers and pointers are all 64-bit (8 bytes).  Program flow will be captured starting inside `bar`, ignoring how we got to this point.  We'll walk through the calling convention from here.
+For simplicity, we will assume ILP-64 &mdash; meaning integers and pointers are all 64-bit (8 bytes).  Program flow will be captured starting inside `bar`, ignoring how we got to this point.  We'll walk through the calling convention from here.
 
 If we were to imagine the stack at the moment program flow moves to `bar`, it might look like this:
 
@@ -256,7 +256,7 @@ movq    %rdi, 0(%rsp)
 movq    %rsi, 8(%rsp)
 ```
 
-Adding the two values is slightly interesting because the `add` instruction only takes two arguments -- the operands.  The second operand is updated with the result of the operation.
+Adding the two values is slightly interesting because the `add` instruction only takes two arguments &mdash; the operands.  The second operand is updated with the result of the operation.
 
 You can think of
 
