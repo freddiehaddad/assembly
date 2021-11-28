@@ -278,7 +278,7 @@ movq    %rsi, %rax
 or
 
 ```Assembly
-movq   24(%rsp), %rax
+movq   16(%rsp), %rax
 ```
 
 With the return value placed in the proper register, it's time to tear down the stack and return to the caller.  To do this, a few things need to happen.
