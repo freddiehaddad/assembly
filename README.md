@@ -377,6 +377,8 @@ ret
 
 The `ret` instruction is equivalent to popping the next value off the stack and placing it in the instruction pointer `rip` register.
 
+After the `ret` instruction is executed, our stack frame is restored:
+
 ```text
           rsp  | a      |
                | b      |
