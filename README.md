@@ -165,7 +165,9 @@ bar            +--------+
                .        .
 ```
 
-Next, we need to assign the values `1` and `2` to `a` and `b`, respectively.  Looking at the `rsp` register, we can see that it's already pointing to the top of the stack which is where `a` is.  Since `b` is adjacent to `a` in memory, it's 8 bytes past `a`.  Since the top of the stack is at the lower memory address than the bottom of the stack, the offsets to the local variables are positive.  Therefore, we can assign the values as follows:
+Next, we need to assign the values `1` and `2` to `a` and `b`, respectively.  Looking at the `rsp` register, we can see that it's already pointing to the top of the stack. This is where `a` is.  Since `b` is adjacent to `a` in memory, it's 8 bytes past `a`.  With the top of the stack at a lower memory address than the bottom, the offsets to the local variables are positive from the stack pointer.
+
+With all that in mind, we can assign the values:
 
 ```Assembly
 movq     $1, 0(%rsp)
