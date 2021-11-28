@@ -59,7 +59,7 @@ Immediately we can the need for a contract between the caller and callee to ensu
 
 There's a lot to unpack here.  Let's examine how this happens step-by-step or (instruction by instruction).
 
-We'll describe two function prototypes `foo` and `bar` using a higher level language and translate their behavior into Assembly instructions following the interface and conventions above.
+We'll define two functions `foo` and `bar` using the C programming language translating their behavior into Assembly following the interface and conventions above.
 
 ```C
 int foo(int _a, int _b)
