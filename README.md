@@ -289,7 +289,7 @@ To accomplish this, a few things need to happen:
 2. Restore the previous values in the `rsp` and `rbp` registers
 3. Update the instruction pointer (`rip`) to the next instruction in the caller's function
 
-Let's start with restoring the stack by thinking about how we created this stack frame.
+Let's start with restoring the stack by thinking about how we created it.
 
 The instructions
 
