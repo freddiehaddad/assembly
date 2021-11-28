@@ -325,13 +325,13 @@ would suffice to achieve our goal returning us to the moment we entered `foo`.
 
 However, one observation reveals a minor optimization saving us the step of executing the `add` instruction.
 
-Notice that the next instruction
+Notice how the instruction
 
 ```Assembly
 movq     %rbp, %rsp
 ```
 
-actually automatically collapses the stack frame by setting it to the same value as the `rbp`.  That step alone eliminates the need to perform any arithmetic with the `rsp` register directly.
+automatically collapses the stack frame by setting the `rsp` register to the same value as `rbp`.  The `add` happened implicitly as a result of the `movq` instruction.
 
 The `pop` instruction is doing two things that must be noted:
 
