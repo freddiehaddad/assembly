@@ -135,7 +135,7 @@ bar            +--------+
                .        .
 ```
 
-Now we need to allocate space on the stack for the three local variables (`a`, `b`, and `c`).  Remembering that we are treating all values at 64-bit (8 bytes), we need to create a 24-byte stack frame.  We can do this by subtracting 24 from the value in the stack pointer.  Recall that the stack grows from high to low memory.  So as the stack grows, it's value approaches zero.  Hence, the reason for the subtraction.  As a side note, you could also use the `add` instruction to add -24 to the stack pointer.
+Now we need to allocate space on the stack for the three local variables (`a`, `b`, and `c`).  Remembering that we are treating all values at 64-bit (8 bytes), we need increase the size of our stack frame to 24 bytes.  We can do this by subtracting 24 from the value in the stack pointer.  Recall that the stack grows from high to low memory.  So as the stack grows, it's value approaches zero.  Hence, the reason for the subtraction.  As a side note, you could also use the `add` instruction to add -24 to the stack pointer.
 
 ```Assembly
 sub     $24, %rsp
