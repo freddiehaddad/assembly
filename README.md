@@ -124,7 +124,9 @@ Now that we saved the value in the `rbp` register, we need to update it to refle
 movq     %rsp, %rbp
 ```
 
-We move the value of the stack pointer `rsp` into the base pointer `rbp` since this will be the start of `bar`'s stack frame.  The layout now:
+We move the value of the stack pointer `rsp` into the base pointer `rbp` since this will be the start of `bar`'s stack frame.
+
+The layout now:
 
 ```text
      rsp, rbp  | rbp    |
@@ -135,7 +137,9 @@ bar            +--------+
                .        .
 ```
 
-Now we need to allocate space on the stack for the three local variables (`a`, `b`, and `c`).  Remembering that we are treating all values at 64-bit (8 bytes), we need increase the size of our stack frame to 24 bytes.  We can do this by subtracting 24 from the value in the stack pointer.  Recall that the stack grows from high to low memory.  So as the stack grows, it's value approaches zero.  Hence, the reason for the subtraction.  As a side note, you could also use the `add` instruction to add -24 to the stack pointer.
+Now we need to allocate space on the stack for the three local variables (`a`, `b`, and `c`).  Remembering that we are treating all values at 64-bit (8 bytes), we need increase the size of our stack frame to 24 bytes.  We can do this by subtracting 24 from the value in the stack pointer.
+
+Recall that the stack grows from high to low memory towards the heap.  In other words, the top of the stack is approaching zero as it grows.  Hence, the reason for the subtraction.  As a side note, you could also use the `add` instruction to add -24 to the stack pointer.
 
 ```Assembly
 sub     $24, %rsp
