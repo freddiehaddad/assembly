@@ -353,7 +353,7 @@ or
 leave
 ```
 
-With `foo`'s stack frame destroyed, we are almost finished.
+partially restoring the stack to our desired state:
 
 ```text
 foo            +--------+
@@ -369,7 +369,7 @@ bar            +--------+
                .        .
 ```
 
-The last step `foo` needs to take is returning back to the caller.  We can accomplish this with the `ret` instruction.
+With `foo`'s stack frame destroyed, we are almost finished.  The last step `foo` needs to take is returning control back to the caller.  We can accomplish this with the `ret` instruction.
 
 ```Assembly
 ret
