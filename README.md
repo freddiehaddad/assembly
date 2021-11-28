@@ -36,19 +36,26 @@ In this layout the runtime stack grows from high memory to low memory and any dy
 
 Let's first consider the things that need to happen when one function needs to call another.
 
-1. Caller needs to make available to the callee any arguments required by that function
-   * Parameters need to be passed in some standardized way
-1. Caller needs to preserve any registers that the callee might overwrite if needed
-1. Caller needs a way to call that function
-   * The instruction pointer needs to jump from the current function to the called function
-   * When the called function returns program execution must continue where it left off
-1. Callee needs to create a new stack frame
-   * Any callee saved registers must be preserved if they are to be used
-   * Space needs to be allocated for local variables if needed 
-1. Callee needs to access the arguments
-1. Callee needs to put the return value somewhere for the caller to find it
-1. Callee needs destroy its stack frame
-1. Callee needs to restore the callers stack frame
+Caller responsibilities:
+
+* pass arguments to the callee
+* preserve any registers not designated callee saved
+* preserve any registers designated caller saved
+* store the address to resume execution when the called function returns
+
+Callee responsibilities:
+
+* preserve any registers designated callee saved
+* pass the return value back to the caller
+* restore any registers designated callee saved before returning
+
+Immediately we can the need for a contract between the caller and callee to ensure:
+
+* callee knows where the arguments are
+* callee knows the order in which arguments were passed
+* caller knows where the callee will save the return value
+* callee can restore the stack frame for the caller
+* the program can continue where it left off when the callee returns
 
 There's a lot to unpack here.  Let's examine how this happens step-by-step or (instruction by instruction).
 
