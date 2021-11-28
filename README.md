@@ -49,7 +49,6 @@ Let's first consider the things that need to happen when one function needs to c
 1. Callee needs to put the return value somewhere for the caller to find it
 1. Callee needs destroy its stack frame
 1. Callee needs to restore the callers stack frame
-1. Callee needs to return control to where the caller left off
 
 There's a lot to unpack here.  Let's examine how this happens step-by-step or (instruction by instruction).
 
@@ -60,7 +59,7 @@ int foo(int _a, int _b)
 {
 	int a;
 	int b;
-	int c
+	int c;
 
 	a = _a;
 	b = _b;
