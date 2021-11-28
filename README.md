@@ -321,7 +321,7 @@ movq    %rbp, %rsp
 pop     %rbp
 ```
 
-would suffice to achieve our goal returning us to the point when we entered `foo`.
+would suffice to achieve our goal returning us to the moment we entered `foo`.
 
 However, this is one observation that leads to another minor optimization that saves us the step of executing the `add` instruction.
 
