@@ -70,9 +70,12 @@ int foo(int _a, int _b)
 
 int bar()
 {
-	int a = 1;
-	int b = 2;
+	int a;
+	int b;
 	int c;
+	
+	a = 1;
+	b = 2;
 
 	c = foo(a, b);
 
