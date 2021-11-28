@@ -95,7 +95,7 @@ bar            +--------+
                .        .  rbp
 ```
 
-The instruction at the point the call to `bar` was made (in the instruction pointer) is at the top of the previous functions call stack.  This happened as a result of the `call` instruction which saves the value in the `rip` register on the stack and moves the stack pointer `rsp`.  Lastly, the instruction pointer register is set to the address of `bar`.
+The instruction at the point the call to `bar` was made (in the instruction pointer) is at the top of the previous function's call stack.  This happened as a result of the `call` instruction which saves the value in the `rip` register on the stack and moves the stack pointer `rsp`.  Lastly, the instruction pointer register is set to the address of `bar`.
 
 Thinking about how we got to `bar`, the stack pointer and the base pointer registers represent the caller's stack frame.  The value in those registers need to be preserved because `bar` needs to create its own stack frame, use it for its work, destroy it when finished, and restore the caller's stack frame.
 
