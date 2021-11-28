@@ -338,12 +338,16 @@ The `pop` instruction is doing two things that must be noted:
 1. Writes the value at the top of the stack to the specified register (in this case `rbp`)
 2. Adjusts the stack pointer `rsp` register value to point to the next element on the stack 
 
+As another side note, the two instructions can actually be reduced to a single instruction `leave` which does the same thing.
+
+So, our final solution to the problem of restoring the stack frame can be reduced to:
+
 ```Assembly
 movq    %rbp, %rsp
 pop     %rbp
 ```
 
-As another side note, the two instructions can actually be reduced to a single instruction `leave`.
+or
 
 ```Assembly
 leave
