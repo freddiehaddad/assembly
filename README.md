@@ -406,7 +406,7 @@ leave
 ret
 ```
 
-Flow has now returned to the caller of `bar`.
+With those instructions exectued, flow has now returned to the `bar`'s caller and the program contines executing.
 
 ```text
           rsp  .        .
