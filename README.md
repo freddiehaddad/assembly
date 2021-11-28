@@ -34,7 +34,7 @@ In this layout the runtime stack grows from high memory to low memory and any dy
 
 ## Function Call Process
 
-Let's first consider the things that need to happen when one function needs to call another.
+Let's first consider what must happen for a function to call another function and eventually return.
 
 Caller responsibilities:
 
