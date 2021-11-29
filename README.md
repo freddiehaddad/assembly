@@ -481,7 +481,7 @@ After the final two instructions are exectued, program flow will have returned `
 ```
 
 ## Additional Resources
-
+* [System V Application Binary Interface](http://www.x86-64.org/documentation/abi.pdf)
 * [AMD64 Architecture](https://developer.amd.com/resources/developer-guides-manuals/)
   * [AMD64 Architecture Programmer’s Manual Volumes 1-5](https://www.amd.com/system/files/TechDocs/40332.pdf)
 * [GDB: The GNU Project Debugger](https://www.gnu.org/software/gdb/documentation/)
