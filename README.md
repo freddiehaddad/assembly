@@ -100,7 +100,9 @@ In this layout the runtime stack grows from high memory to low memory and any dy
 
 ## Calling Convention
 
-You can think of a calling convention as a standard for how functions in a program communicate.  This agreed upon standard includes:
+You can think of a calling convention as a standard for how subroutines (i.e. functions) operate and how the caller and callee can communicate &mdash; that is pass arguments and return values.
+
+This agreed upon standard includes:
 
 * How parameters are passed from the caller to the callee
 * Which registers the callee must preserve for the caller
