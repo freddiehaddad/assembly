@@ -73,7 +73,7 @@ Breakpoint 1, main () at main.s:41
 
 # Introduction
 
-Before diving into the actual code, an understanding of an understanding of a program's organization in memory and how a function call works will be helpful. 
+Before diving into the actual code, an understanding of a program's organization in memory and how a function call works will be helpful in the learning process. 
 
 ## Address Space
 
