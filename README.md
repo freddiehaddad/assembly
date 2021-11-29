@@ -381,7 +381,7 @@ To accomplish this, a few things need to happen:
 
 Let's start with restoring the stack by thinking about how we created it.
 
-The instructions
+The instructions:
 
 ```Assembly
 push    %rbp
@@ -389,7 +389,7 @@ movq    %rsp, %rbp
 sub     $24, %rsp
 ```
 
-resulted in 
+Resulted in `foo`'s stack:
 
 ```text
           rsp  | a      |
@@ -398,8 +398,6 @@ resulted in
           rbp  | rbp    |
 foo            +--------+
 ```
-
-which is `foo`'s stack.
 
 In essence if we undo the three actions we took when creating the stack frame, we should be able to restore it.
 
