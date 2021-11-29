@@ -1,12 +1,57 @@
+# Overview
 
-## Calling Convention
+This project is intended to be a primer to the AMD64 function call process with the goal of breaking down what happens inside a function call at the CPU instruction level.  Topics covered include
 
-You can think of a calling convention as a standard for how functions in a program communicate.  This agreed upon standard includes:
+* Runtime stack
+* Instruction, stack, and base registers
+* Parameter passing
+* Returning a value
+* Caller and callee responsibilties
 
-* How parameters are passed from the caller to the callee
-* Which registers the callee must preserve for the caller
-* How the program flow from one function to another will happen
-* How a stack frame will be created and destroyed
+# Getting Started
+
+Reading this document will suffice in gaining and an understanding of the topics to be covered.  However, it is recommended to actually build the included assembly file and step through it instruction-by-instruction to test your understanding by examining various registers and memory locations.
+
+## Building
+
+The C Standard Library is required for compilation.  On Ubuntu Linux or Debian based distributions, dependencies can be installed with:
+
+```BASH
+$ sudo apt install build-essential
+```
+
+Compiling the program:
+
+```BASH
+$ gcc -g main.s -o main
+```
+
+## Running and Debugging
+
+Running the program and checking the return value:
+
+```BASH
+$ ./main
+$ echo $?
+```
+
+Debugging can be done with GDB:
+
+```BASH
+$ gdb ./main
+```
+
+If you are not familar with GDB, there is a built in help tool.  Or you can view the GDB documentation or the many examples online.  To get you started, the following commands will set a breakpoint at the entry point to the program, and allow and step through each instruction one by one.
+
+```text
+b main
+run
+ni
+```
+
+# Introduction
+
+Before diving into the actual code, an understanding of an understanding of a program's organization in memory and how a function call works will be helpful. 
 
 ## Address Space
 
@@ -29,8 +74,16 @@ Low Memory      +-----------+
                 |   Stack   |    Runtime Stack
 High Memory     +-----------+
 ```
-
 In this layout the runtime stack grows from high memory to low memory and any dynamically allocated memory grows from low memory towards high memory.  More simply put, the heap and the stack grow towards each other.
+
+## Calling Convention
+
+You can think of a calling convention as a standard for how functions in a program communicate.  This agreed upon standard includes:
+
+* How parameters are passed from the caller to the callee
+* Which registers the callee must preserve for the caller
+* How the program flow from one function to another will happen
+* How a stack frame will be created and destroyed
 
 ## Function Call Process
 
@@ -57,7 +110,11 @@ Immediately we can the need for a contract between the caller and callee to ensu
 * callee can restore the stack frame for the caller
 * the program can continue where it left off when the callee returns
 
-There's a lot to unpack here.  Let's examine how this happens step-by-step or (instruction by instruction).
+# Code Walkthrough
+
+Everything discussed so far requires a lot of unpacking.  We'll acomplish this by converting a program written in C to Assembly step-by-step or (instruction by instruction).
+
+## C Program
 
 We'll define two functions `foo` and `bar` using the C programming language translating their behavior into Assembly following the interface and conventions above.
 
@@ -89,6 +146,8 @@ int bar()
 	return c;
 }
 ```
+
+## Assembly
 
 For simplicity, we will assume ILP-64 &mdash; meaning integers and pointers are all 64-bit (8 bytes).  Program flow will be captured starting inside `bar`, ignoring how we got to this point.  We'll walk through the calling convention from here.
 
@@ -413,10 +472,17 @@ leave
 ret
 ```
 
-With those instructions exectued, flow has now returned to the `bar`'s caller and the program contines executing.
+After the final two instructions are exectued, program flow will have returned `bar`'s caller and the program contines executing.
 
 ```text
           rsp  .        .
                .        .
                .        .  rbp
 ```
+
+## Additional Resources
+
+* [AMD64 Architecture](https://developer.amd.com/resources/developer-guides-manuals/)
+  * [AMD64 Architecture Programmer’s Manual Volumes 1-5](https://www.amd.com/system/files/TechDocs/40332.pdf)
+* [GDB: The GNU Project Debugger](https://www.gnu.org/software/gdb/documentation/)
+* [GDB Cheat Sheet](https://bytes.usc.edu/cs104/wiki/gdb/)
