@@ -41,12 +41,13 @@ Debugging can be done with GDB:
 $ gdb ./main
 ```
 
-If you are not familar with GDB, there is a built in help tool.  Or you can view the GDB documentation or the many examples online.  To get you started, the following commands will set a breakpoint at the entry point to the program, and allow and step through each instruction one by one.
+If you are not familar with GDB, there is a built in help tool.  Or you can view the GDB documentation or the many examples online.  To get you started, the following commands will set a breakpoint at the entry point to the program and start execution.  `ni` will execute the next instruction and stop.  You can repeat the last command `ni` by pressing enter.
 
 ```text
-b main
-run
-ni
+(gdb) b main
+(gdb) run
+(gdb) ni
+(gdb)
 ```
 
 # Introduction
