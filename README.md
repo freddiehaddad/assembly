@@ -1,6 +1,8 @@
 # Overview
 
-This project is intended to be a primer to the AMD64 function call process with the goal of breaking down what happens inside a function call at the CPU instruction level.  Topics covered include
+This project is intended to be a primer to the AMD64 function call process with the goal of breaking down what happens inside a function call at the CPU instruction level.
+
+Topics covered include:
 
 * Runtime stack
 * Instruction, stack, and base registers
