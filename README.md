@@ -50,6 +50,25 @@ If you are not familar with GDB, there is a built in help tool.  Or you can view
 (gdb)
 ```
 
+The actual output will look similar to:
+
+```gdb
+(gdb) b main
+Breakpoint 1 at 0x1178: file main.s, line 41.
+(gdb) run
+Starting program: /scratch/freddiehaddad/projects/assembly/main 
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+
+Breakpoint 1, main () at main.s:41
+41		push	%rbp
+(gdb) ni
+42		movq	%rsp, %rbp
+(gdb) 
+44		call	bar
+(gdb) 
+```
+
 # Introduction
 
 Before diving into the actual code, an understanding of an understanding of a program's organization in memory and how a function call works will be helpful. 
