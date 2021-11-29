@@ -77,7 +77,7 @@ Before diving into the actual code, an understanding of a program's organization
 
 ## Address Space
 
-One common layout of a program in memory:
+A commonly used memory organization for a program at runtime:
 
 ```text
 Low Memory      +-----------+
