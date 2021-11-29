@@ -5,7 +5,7 @@ This project is intended to be a primer to the AMD64 function call process with 
 Topics covered include:
 
 * Runtime stack
-* Instruction, stack, and base registers
+* Functionality of various registers (i.e. instruction, stack, and base)
 * Parameter passing
 * Returning a value
 * Caller and callee responsibilties
