@@ -208,7 +208,7 @@ bar            +--------+
                .        .  rbp
 ```
 
-Now that we saved the value in the `rbp` register, we need to update it to reflect the base of `bar`'s stack frame.  This can be achieved with the `movq` instruction.
+After saving the value in the `rbp` register, we must update it to reflect the base of `bar`'s stack frame.  This can be achieved with the `movq` instruction.
 
 ```Assembly
 movq     %rsp, %rbp
@@ -246,8 +246,8 @@ We have now allocated space on the stack for `bar`'s local variables:
 ```text
           rsp  | a      |
                | b      |
-               | c      |
-          rbp  | rbp    |
+               | c      |  rbp
+               | rbp    |
 bar            +--------+
                | rip    |
                .        .
@@ -293,8 +293,8 @@ foo            +--------+
           rsp  | rip    |
                | a      |
                | b      |
-               | c      |
-          rbp  | rbp    |
+               | c      |  rbp
+               | rbp    |
 bar            +--------+
                | rip    |
                .        .
@@ -317,14 +317,14 @@ At the end of this sequence of instructions, the stack now looks like this:
 ```text
           rsp  | a      |
                | b      |
-               | c      |
-          rbp  | rbp    |
+               | c      |  rbp
+               | rbp    |
 foo            +--------+
                | rip    |
                | a      |
                | b      |
                | c      |
-          rbp  | rbp    |
+               | rbp    |
 bar            +--------+
                | rip    |
                .        .
@@ -394,8 +394,8 @@ Resulted in `foo`'s stack:
 ```text
           rsp  | a      |
                | b      |
-               | c      |
-          rbp  | rbp    |
+               | c      |  rbp
+               | rbp    |
 foo            +--------+
 ```
 
@@ -448,8 +448,8 @@ foo            +--------+
           rsp  | rip    |
                | a      |
                | b      |
-               | c      |
-          rbp  | rbp    |
+               | c      |  rbp
+               | rbp    |
 bar            +--------+
                | rip    |
                .        .
@@ -470,8 +470,8 @@ After the `ret` instruction is executed, our stack frame is restored:
 ```text
           rsp  | a      |
                | b      |
-               | c      |
-          rbp  | rbp    |
+               | c      |  rbp
+               | rbp    |
 bar            +--------+
                | rip    |
                .        .
