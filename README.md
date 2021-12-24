@@ -479,7 +479,7 @@ bar            +--------+
                .        .
 ```
 
-Alas, we are back inside `bar` with all registers restored and the return value ready for us in the `rax` register.  The last two steps of `bar` include assign the return value from `foo` to it's local variable `c` and returning that value to the caller.
+Alas, we are back inside `bar` with all registers restored and the return value ready for us in the `rax` register.  The last two steps of `bar` include assigning the return value from `foo` to it's local variable `c` and returning that value to the caller.
 
 Since the return value is already in the `rax` register and bar doesn't make any changes to it, the return value is already set.  Therefore, all we need to do is assign the the return value to our local variable `c`.
 
@@ -494,7 +494,7 @@ leave
 ret
 ```
 
-After the final two instructions are exectued, program flow will have returned `bar`'s caller and the program contines executing.
+After the final two instructions are exectued, program flow will have returned to `bar`'s caller and the program contines executing.
 
 ```text
           rsp  .        .
