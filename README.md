@@ -1,6 +1,6 @@
 # Overview
 
-This project is intended to be a primer to the AMD64 function call process with the goal of breaking down what happens inside a function call at the CPU instruction level.
+This project is intended to be a primer to the AMD64 function calling process with the goal of breaking down what happens inside a function call at the CPU instruction level.
 
 Topics covered include:
 
@@ -12,7 +12,7 @@ Topics covered include:
 
 # Getting Started
 
-Reading this document will suffice in gaining and an understanding of the topics to be covered.  However, it is recommended to actually build the included assembly file and step through it instruction-by-instruction to test your understanding by examining various registers and memory locations.
+Reading this document will suffice in gaining an understanding of the topics to be covered.  However, it is recommended to actually build the included assembly file and step through it instruction-by-instruction to test your understanding by examining various registers and memory locations.
 
 ## Building
 
@@ -96,11 +96,11 @@ Low Memory      +-----------+
                 |   Stack   |    Runtime Stack
 High Memory     +-----------+
 ```
-In this layout the runtime stack grows from high memory to low memory and any dynamically allocated memory grows from low memory towards high memory.  More simply put, the heap and the stack grow towards each other.
+In this layout, the runtime stack grows from high memory towards low memory and any dynamically allocated memory grows from low memory towards high memory.  More simply put, the heap and the stack grow towards each other.
 
 ## Calling Convention
 
-You can think of a calling convention as a standard for how subroutines (i.e. functions) operate and how the caller and callee can communicate &mdash; that is pass arguments and return values.
+You can think of a calling convention as a contract for how subroutines (i.e. functions) operate and how the caller and callee can communicate &mdash; that is pass arguments and return values.
 
 This agreed upon standard includes:
 
@@ -140,7 +140,7 @@ Everything discussed so far requires a lot of unpacking.  We'll acomplish this b
 
 ## C Program
 
-We'll define two functions `foo` and `bar` using the C programming language translating their behavior into Assembly following the interface and conventions above.
+We'll define two functions `foo` and `bar` using the C programming language translating their behavior into Assembly following the interface and conventions discussed.
 
 ```C
 int foo(int _a, int _b)
