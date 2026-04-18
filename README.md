@@ -8,7 +8,7 @@ Topics covered include:
 * Functionality of various registers (i.e. instruction, stack, and base)
 * Parameter passing
 * Returning a value
-* Caller and callee responsibilties
+* Caller and callee responsibilities
 
 # Getting Started
 
@@ -43,7 +43,7 @@ Debugging can be done with GDB:
 $ gdb ./main
 ```
 
-If you are not familar with GDB, there is a built in help tool.  Or you can view the GDB documentation or the many examples online.  To get you started, the following commands will set a breakpoint at the entry point to the program and start execution.  `ni` will execute the next instruction and stop.  You can repeat the last command `ni` by pressing enter.
+If you are not familiar with GDB, there is a built in help tool.  Or you can view the GDB documentation or the many examples online.  To get you started, the following commands will set a breakpoint at the entry point to the program and start execution.  `ni` will execute the next instruction and stop.  You can repeat the last command `ni` by pressing enter.
 
 ```text
 (gdb) b main
@@ -116,7 +116,6 @@ Let's first consider what must happen for a function to call another function an
 Caller responsibilities:
 
 * pass arguments to the callee
-* preserve any registers not designated callee saved
 * preserve any registers designated caller saved
 * store the address to resume execution when the called function returns
 
@@ -126,7 +125,7 @@ Callee responsibilities:
 * pass the return value back to the caller
 * restore any registers designated callee saved before returning
 
-Immediately we can the need for a contract between the caller and callee to ensure:
+Immediately we can see the need for a contract between the caller and callee to ensure:
 
 * callee knows where the arguments are
 * callee knows the order in which arguments were passed
@@ -136,7 +135,7 @@ Immediately we can the need for a contract between the caller and callee to ensu
 
 # Code Walkthrough
 
-Everything discussed so far requires a lot of unpacking.  We'll acomplish this by converting a program written in C to Assembly step-by-step or (instruction by instruction).
+Everything discussed so far requires a lot of unpacking.  We'll accomplish this by converting a program written in C to Assembly step-by-step or (instruction by instruction).
 
 ## C Program
 
@@ -182,7 +181,7 @@ bar            +--------+
           rsp  | rip    |
                .        .
                .        .
-               .        .  rbp
+          rbp  .        .
 ```
 
 The instruction at the point the call to `bar` was made (in the instruction pointer) is at the top of the previous function's call stack.  This happened as a result of the `call` instruction which saves the value in the `rip` register on the stack and moves the stack pointer `rsp`.  Lastly, the instruction pointer register is set to the address of `bar`.
@@ -205,7 +204,7 @@ bar            +--------+
                | rip    |
                .        .
                .        .
-               .        .  rbp
+          rbp  .        .
 ```
 
 After saving the value in the `rbp` register, we must update it to reflect the base of `bar`'s stack frame.  This can be achieved with the `movq` instruction.
@@ -246,8 +245,8 @@ We have now allocated space on the stack for `bar`'s local variables:
 ```text
           rsp  | a      |
                | b      |
-               | c      |  rbp
-               | rbp    |
+               | c      |
+          rbp  | rbp    |
 bar            +--------+
                | rip    |
                .        .
@@ -265,6 +264,8 @@ movq     $2, 8(%rsp)
 ```
 
 Note: The X64 Intel/AMD processors have general purpose registers that can be used instead of allocating memory on the stack.  Storing the values on the stack is purely for educational purposes.
+
+Note: The AMD64 ABI requires the stack pointer to be 16-byte aligned before a `call` instruction.  Allocating 24 bytes violates this requirement.  In practice, 32 bytes should be allocated to maintain proper alignment.  This detail is omitted here for simplicity.
 
 We are now ready to set up the call to `foo`.
 
@@ -293,8 +294,8 @@ foo            +--------+
           rsp  | rip    |
                | a      |
                | b      |
-               | c      |  rbp
-               | rbp    |
+               | c      |
+          rbp  | rbp    |
 bar            +--------+
                | rip    |
                .        .
@@ -317,8 +318,8 @@ At the end of this sequence of instructions, the stack now looks like this:
 ```text
           rsp  | a      |
                | b      |
-               | c      |  rbp
-               | rbp    |
+               | c      |
+          rbp  | rbp    |
 foo            +--------+
                | rip    |
                | a      |
@@ -394,8 +395,8 @@ Resulted in `foo`'s stack:
 ```text
           rsp  | a      |
                | b      |
-               | c      |  rbp
-               | rbp    |
+               | c      |
+          rbp  | rbp    |
 foo            +--------+
 ```
 
@@ -448,8 +449,8 @@ foo            +--------+
           rsp  | rip    |
                | a      |
                | b      |
-               | c      |  rbp
-               | rbp    |
+               | c      |
+          rbp  | rbp    |
 bar            +--------+
                | rip    |
                .        .
@@ -470,8 +471,8 @@ After the `ret` instruction is executed, our stack frame is restored:
 ```text
           rsp  | a      |
                | b      |
-               | c      |  rbp
-               | rbp    |
+               | c      |
+          rbp  | rbp    |
 bar            +--------+
                | rip    |
                .        .
@@ -479,9 +480,9 @@ bar            +--------+
                .        .
 ```
 
-Alas, we are back inside `bar` with all registers restored and the return value ready for us in the `rax` register.  The last two steps of `bar` include assigning the return value from `foo` to it's local variable `c` and returning that value to the caller.
+Alas, we are back inside `bar` with all registers restored and the return value ready for us in the `rax` register.  The last two steps of `bar` include assigning the return value from `foo` to its local variable `c` and returning that value to the caller.
 
-Since the return value is already in the `rax` register and bar doesn't make any changes to it, the return value is already set.  Therefore, all we need to do is assign the the return value to our local variable `c`.
+Since the return value is already in the `rax` register and bar doesn't make any changes to it, the return value is already set.  Therefore, all we need to do is assign the return value to our local variable `c`.
 
 ```Assembly
 movq    %rax, 16(%rsp)
@@ -494,12 +495,12 @@ leave
 ret
 ```
 
-After the final two instructions are exectued, program flow will have returned to `bar`'s caller and the program contines executing.
+After the final two instructions are executed, program flow will have returned to `bar`'s caller and the program continues executing.
 
 ```text
           rsp  .        .
                .        .
-               .        .  rbp
+          rbp  .        .
 ```
 
 ## Additional Resources
