@@ -1,0 +1,7 @@
+[default_config]
+assembler = "masm"
+instruction_set = "x86-64"
+
+[opts]
+diagnostics = false
+default_diagnostics = false
