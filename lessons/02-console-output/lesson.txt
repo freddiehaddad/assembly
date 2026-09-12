@@ -1,0 +1,316 @@
+LESSON 2: CONSOLE OUTPUT WITHOUT THE CRT
+========================================
+
+Goal
+----
+
+Write text to the Windows console using Windows API functions directly,
+without printf, puts, or any other C-runtime function.
+
+This lesson calls:
+
+  * GetStdHandle to obtain the standard-output handle
+  * WriteFile to write bytes to that handle
+  * ExitProcess to terminate the process
+
+The source file for this lesson is hello.asm.
+
+
+Build and run
+-------------
+
+Run these commands from a Visual Studio Developer PowerShell or x64 Native
+Tools Command Prompt:
+
+    ml64 /c /Fo hello.obj hello.asm
+    link /subsystem:console /entry:main hello.obj kernel32.lib /out:hello.exe
+    .\hello.exe
+    $LASTEXITCODE
+
+Expected output:
+
+    Hello from x64 assembly!
+    0
+
+The first line is written by the program. The final line is PowerShell
+displaying the process exit status.
+
+
+The source program
+------------------
+
+    option casemap:none
+
+    STD_OUTPUT_HANDLE equ -11
+
+    .data
+
+    message db "Hello from x64 assembly!", 13, 10
+    message_length equ $ - message
+
+    .code
+
+    extern GetStdHandle:proc
+    extern WriteFile:proc
+    extern ExitProcess:proc
+
+    main proc
+        sub rsp, 38h
+
+        mov ecx, STD_OUTPUT_HANDLE
+        call GetStdHandle
+
+        mov rcx, rax
+        lea rdx, message
+        mov r8d, message_length
+        lea r9, [rsp+28h]
+        mov qword ptr [rsp+20h], 0
+        call WriteFile
+
+        xor ecx, ecx
+        call ExitProcess
+    main endp
+
+    end
+
+
+The Windows x64 calling convention
+----------------------------------
+
+The first four integer or pointer arguments to a function are passed in:
+
+    argument 1: RCX
+    argument 2: RDX
+    argument 3: R8
+    argument 4: R9
+
+An additional argument is passed on the stack. The caller must also reserve
+32 bytes of shadow space for the called function. This is required even when
+the called function does not use the space.
+
+WriteFile has this C-style signature:
+
+    WriteFile(
+        HANDLE       hFile,
+        LPCVOID      lpBuffer,
+        DWORD        nNumberOfBytesToWrite,
+        LPDWORD      lpNumberOfBytesWritten,
+        LPOVERLAPPED lpOverlapped
+    )
+
+The assembly locations are:
+
+    hFile                    RCX
+    lpBuffer                 RDX
+    nNumberOfBytesToWrite    R8D
+    lpNumberOfBytesWritten   R9
+    lpOverlapped              [RSP+20h] (caller-side RSP)
+
+The fifth argument starts at the caller's RSP+20h because the first 20h
+bytes are the required shadow space. This is an offset, not a size: 20h is
+32 decimal, and the fifth argument occupies the next 8-byte slot.
+
+After CALL pushes the return address, the callee has a different RSP. From
+WriteFile's perspective, the same fifth argument is at [rsp+28h]:
+
+    [callee rsp+00h .. rsp+07h]  return address
+    [callee rsp+08h .. rsp+27h]  32-byte shadow/home space
+    [callee rsp+28h .. rsp+2Fh]  fifth argument
+
+The source uses [rsp+20h] because it is written by the caller before CALL.
+Never mix the caller's RSP with the callee's RSP.
+
+
+Data declarations
+-----------------
+
+    .data
+
+Places initialized writable data in the data section of the object file.
+The final PE executable normally contains this data in a section named
+.data.
+
+    message db "Hello from x64 assembly!", 13, 10
+
+DB means "define byte." It places the characters into memory followed by
+carriage return (13) and line feed (10), the usual Windows text newline.
+The string is not automatically null-terminated. WriteFile does not need a
+null terminator because it receives an explicit byte count.
+
+    message_length equ $ - message
+
+The dollar sign means the current assembly location. The difference between
+the current location and the start of message is the number of bytes in the
+message. EQU creates an assembly-time constant; it does not generate a
+runtime instruction.
+
+
+Call 1: GetStdHandle
+--------------------
+
+The Windows constant STD_OUTPUT_HANDLE is -11. This identifies the standard
+output device.
+
+    mov ecx, STD_OUTPUT_HANDLE
+    call GetStdHandle
+
+GetStdHandle receives its first argument in RCX. The value is a 32-bit
+DWORD, so ECX is appropriate. Writing ECX also clears the upper half of RCX.
+
+The function returns a HANDLE in RAX:
+
+    RAX = standard-output handle
+
+RAX is the return-value register. It is not permanently associated with one
+meaning; its meaning here is the value returned by GetStdHandle.
+
+
+Call 2: WriteFile
+-----------------
+
+The call setup is:
+
+    mov rcx, rax
+
+Copies the handle returned by GetStdHandle into RCX, where it becomes
+WriteFile's first argument.
+
+    lea rdx, message
+
+LEA computes the address of message and places that pointer in RDX. It does
+not copy the message bytes into the register.
+
+    mov r8d, message_length
+
+WriteFile's third parameter is a DWORD, which is 32 bits, so R8D is used.
+R8 is the full 64-bit register and R8D is its low 32-bit portion. Writing R8D
+also clears the upper half of R8.
+
+    lea r9, [rsp+28h]
+
+WriteFile needs a pointer to writable storage for its fourth parameter. This
+passes the address of a stack slot where the API can store the number of
+bytes written.
+
+    mov qword ptr [rsp+20h], 0
+
+The fifth parameter, lpOverlapped, is a pointer-sized value and therefore
+has an 8-byte stack slot. Zero represents NULL and requests a synchronous
+write.
+
+After the call, RAX is nonzero if WriteFile succeeded and zero if it failed.
+The current lesson ignores that result and always exits with status 0.
+
+
+Why the stack allocation is 38h
+--------------------------------
+
+The instruction:
+
+    sub rsp, 38h
+
+subtracts hexadecimal 38, which is decimal 56, from RSP. The stack grows
+toward lower addresses, so subtracting reserves stack storage.
+
+First calculate storage, separately from alignment:
+
+    20h  (32 bytes)  required shadow space
+    08h  ( 8 bytes)  fifth WriteFile argument
+    08h  ( 8 bytes)  local slot for bytes written
+    ----
+    30h  (48 bytes)  required storage
+
+    30h = 48 decimal
+
+The process entry point in this lesson is selected with /entry:main, so do
+not assume that a source-level CALL pushed a return address before main.
+For a normal procedure entered by CALL, the entry RSP is typically 8 bytes
+off a 16-byte boundary because CALL pushed its 8-byte return address. If a
+call site starts with RSP=1008h, for example:
+
+    1008h - 0030h = 0FD8h  ; still ends in 8
+    1008h - 0038h = 0FD0h  ; ends in 0, aligned
+
+For this lesson's call sites, 38h is used:
+
+    30h required storage
+    08h alignment padding
+    38h total reservation
+
+The padding is a placement-free, unused part of the reserved region. It is
+not a fifth argument and it is not inserted between the shadow space and the
+other fields.
+
+After sub rsp,38h, measure all offsets from the new caller-side RSP:
+
+    [rsp+00h ... rsp+1Fh]  20h bytes: shadow space
+    [rsp+20h ... rsp+27h]  08h bytes: fifth argument
+    [rsp+28h ... rsp+2Fh]  08h bytes: bytes-written local slot
+    [rsp+30h ... rsp+37h]  08h bytes: alignment padding
+
+The same layout, drawn with the stack growing toward lower addresses:
+
+    higher addresses
+    [rsp+30h .. rsp+37h]  padding
+    [rsp+28h .. rsp+2Fh]  bytes-written local slot
+    [rsp+20h .. rsp+27h]  fifth argument
+    [rsp+00h .. rsp+1Fh]  32-byte shadow space
+    RSP ----------------> low-address end of reserved block
+    lower addresses
+
+The order used in the size calculation is not a second memory layout. The
+shadow space is at [rsp+00h], not at the high-address end. RSP points to the
+low-address end after SUB, and positive offsets move upward in memory.
+
+The local value is only a DWORD (4 bytes), but using an 8-byte slot keeps the
+stack layout simple and respects the natural stack slot size.
+
+The source instructions therefore mean:
+
+    lea r9, [rsp+28h]            ; address of the local output slot
+    mov qword ptr [rsp+20h], 0   ; caller-side fifth argument
+
+If there were only shadow space and one fifth argument, 28h would be the
+storage total before considering call-site alignment. This program needs a
+second slot and uses 38h for the complete reservation.
+
+
+Register widths
+---------------
+
+RAX, RCX, RDX, R8, and R9 are 64-bit registers. Their 32-bit portions are
+EAX, ECX, EDX, R8D, and R9D.
+
+Use a width matching the API data type:
+
+    mov r8d, message_length     ; DWORD byte count, 32 bits
+    mov rcx, rax                ; HANDLE, pointer-sized, 64 bits
+    lea rdx, message            ; pointer, 64 bits
+    lea r9, [rsp+28h]           ; pointer, 64 bits
+
+The zeroing instruction:
+
+    xor ecx, ecx
+
+sets ECX and therefore all of RCX to zero. It is a common compact idiom.
+This is equivalent here:
+
+    mov ecx, 0
+
+XOR changes arithmetic flags; MOV does not. That difference is irrelevant
+before the final call to ExitProcess.
+
+
+Exercises
+---------
+
+1. Change the message and rebuild the program.
+2. Add a second message and write it with another WriteFile call.
+3. Remove the 13, 10 bytes and observe the newline behavior.
+4. Change STD_OUTPUT_HANDLE from -11 to -10. Explain the result.
+5. Change the final exit status from 0 to 7.
+6. Inspect RAX after WriteFile. What values indicate success and failure?
+7. Exit with status 0 when WriteFile succeeds and status 1 when it fails.
+
+The next lesson will use the WriteFile return value with a conditional
+branch, then introduce simple error handling.
