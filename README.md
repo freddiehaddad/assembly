@@ -13,6 +13,9 @@ runtime entirely.
 1. Calling Windows APIs without the CRT
    * Imports, `kernel32.lib`, API arguments and return values
    * Assignment: write text to standard output
+1. Memory and data
+   * `.data`, `.const`, `.code`, pointers, arrays
+   * Assignment: implement string length and integer formatting
 
 ## Project Structure
 
@@ -25,8 +28,11 @@ runtime entirely.
 │   ├── 01-exit
 │   │   ├── exit.asm
 │   │   └── lesson.txt
-│   └── 02-console-output
-│       ├── hello.asm
+│   ├── 02-console-output
+│   │   ├── hello.asm
+│   │   └── lesson.txt
+│   └── 03-string-length
+│       ├── string-length.asm
 │       └── lesson.txt
 └── README.md
 ```

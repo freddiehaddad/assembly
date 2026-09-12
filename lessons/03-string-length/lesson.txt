@@ -1,0 +1,317 @@
+LESSON 3: STRINGS, POINTERS, LOOPS, AND PROCEDURES
+==================================================
+
+Goal
+----
+
+Implement a reusable string_length procedure in x64 assembly. It scans a
+null-terminated string one byte at a time and returns the number of bytes
+before the null terminator.
+
+This lesson introduces:
+
+  * null-terminated strings
+  * byte loads from memory
+  * pointer arithmetic and indexed addressing
+  * loops and conditional branches
+  * procedure arguments and return values
+  * the difference between assembly-time and runtime lengths
+  * caller-side and callee-side stack offsets
+
+
+Build and run
+-------------
+
+Run these commands from a Visual Studio Developer PowerShell or x64 Native
+Tools Command Prompt:
+
+    ml64 /c /Fo string-length.obj string-length.asm
+    link /subsystem:console /entry:main string-length.obj kernel32.lib /out:string-length.exe
+    .\string-length.exe
+    $LASTEXITCODE
+
+Expected output:
+
+    Hello from x64 assembly!
+    26
+
+The first line is written by the program. The second line is PowerShell
+displaying the process exit status. The exact value depends on the message.
+
+
+Source program
+--------------
+
+    option casemap:none
+
+    STD_OUTPUT_HANDLE equ -11
+
+    .data
+
+    message db "Hello from x64 assembly!", 13, 10, 0
+    message_length equ $ - message - 1
+
+    .code
+
+    extern GetStdHandle:proc
+    extern WriteFile:proc
+    extern ExitProcess:proc
+
+    string_length proc
+        xor eax, eax
+
+    length_loop:
+        cmp byte ptr [rcx+rax], 0
+        je length_done
+
+        inc rax
+        jmp length_loop
+
+    length_done:
+        ret
+    string_length endp
+
+    main proc
+        sub rsp, 38h
+
+        mov ecx, STD_OUTPUT_HANDLE
+        call GetStdHandle
+
+        mov rcx, rax
+        lea rdx, message
+        mov r8d, message_length
+        lea r9, [rsp+28h]
+        mov qword ptr [rsp+20h], 0
+        call WriteFile
+
+        lea rcx, message
+        call string_length
+
+        mov ecx, eax
+        call ExitProcess
+    main endp
+
+    end
+
+
+Null-terminated strings
+-----------------------
+
+    message db "Hello from x64 assembly!", 13, 10, 0
+
+DB means "define byte." This places the characters into memory, followed by
+carriage return (13), line feed (10), and a zero byte.
+
+The final zero is the null terminator. It marks the end of the string for
+procedures that do not receive a separate length. The string is therefore
+null-terminated, but the visible message does not contain a printable zero.
+
+WriteFile does not require a null terminator because it receives an explicit
+byte count:
+
+    mov r8d, message_length
+
+The string_length procedure does require the terminator because it keeps
+reading until it finds a zero.
+
+
+Assembly-time versus runtime length
+-----------------------------------
+
+    message_length equ $ - message - 1
+
+MASM evaluates this while assembling. The dollar sign means the current
+assembly location. The expression measures all bytes from message to the
+current location and subtracts one for the null terminator.
+
+This constant is used by WriteFile, which needs the number of bytes to write.
+It includes the carriage return and line feed, but not the final null byte.
+
+string_length calculates a length at runtime by inspecting memory. It can
+therefore work with any null-terminated string, including one whose contents
+are not known when the program is assembled.
+
+
+The string_length procedure
+---------------------------
+
+The procedure's interface is:
+
+    Input:   RCX = address of a null-terminated string
+    Output:  RAX = number of bytes before the null terminator
+
+The call in main is:
+
+    lea rcx, message
+    call string_length
+
+LEA computes the address of message; it does not copy the message bytes.
+The procedure returns its result in RAX, the Windows x64 return-value
+register.
+
+The procedure is a leaf procedure: it does not call another procedure. It
+uses only volatile registers (RCX and RAX), has no local variables, and
+therefore needs no stack frame.
+
+
+The loop
+--------
+
+    xor eax, eax
+
+Sets the byte count/index to zero. Writing EAX also clears the upper half of
+RAX.
+
+    cmp byte ptr [rcx+rax], 0
+
+Reads one byte at address RCX+RAX and compares it with zero. The BYTE PTR
+qualifier tells MASM that the memory operand is one byte wide.
+
+If RAX is zero, [rcx+rax] is the first character. If RAX is one, it is the
+second character, and so on.
+
+    je length_done
+
+JE means "jump if equal." CMP sets the zero flag when the byte equals zero,
+so this exits the loop when the null terminator is found.
+
+    inc rax
+    jmp length_loop
+
+If the byte was not zero, increment the count and repeat.
+
+When the procedure reaches RET, RAX contains the number of bytes encountered
+before the terminator.
+
+
+Returning the result
+--------------------
+
+After WriteFile, main calls string_length. The result is in RAX:
+
+    lea rcx, message
+    call string_length       ; RAX = string length
+
+ExitProcess takes its first argument in RCX, so main copies the low 32 bits:
+
+    mov ecx, eax
+    call ExitProcess
+
+The length is small enough for a 32-bit value. Writing EAX to ECX also clears
+the upper half of RCX.
+
+
+Stack frame in main
+-------------------
+
+Before its API calls, main executes:
+
+    sub rsp, 38h
+
+At the call sites, the caller-side layout is:
+
+    [rsp+00h .. rsp+1Fh]  20h: WriteFile shadow space
+    [rsp+20h .. rsp+27h]  08h: WriteFile fifth argument
+    [rsp+28h .. rsp+2Fh]  08h: bytes-written local slot
+    [rsp+30h .. rsp+37h]  08h: alignment padding
+
+The setup is:
+
+    lea r9, [rsp+28h]
+    mov qword ptr [rsp+20h], 0
+    call WriteFile
+
+The fifth argument is placed at [rsp+20h] because this is main's RSP before
+the call. The first 20h bytes are the required shadow space.
+
+The stack grows toward lower addresses when space is reserved, but positive
+offsets from the current RSP refer to higher addresses. The offsets above
+are measured from main's current, caller-side RSP. In other words, RSP
+points at the low-address end of this reserved block; it does not point at
+the high-address end.
+
+
+Caller RSP versus callee RSP
+----------------------------
+
+The CALL instruction pushes an 8-byte return address. Consequently, when
+WriteFile begins, its RSP is 8 bytes lower than main's RSP at the call:
+
+    WriteFile_RSP = main_RSP - 8
+
+The same fifth-argument memory location has two valid descriptions:
+
+    from main before CALL:       [rsp+20h]
+    from WriteFile after CALL:   [rsp+28h]
+
+From WriteFile's perspective, the beginning of its stack is:
+
+    [rsp+00h .. rsp+07h]  return address
+    [rsp+08h .. rsp+27h]  20h shadow/home space
+    [rsp+28h .. rsp+2Fh]  fifth argument
+
+This is why Microsoft's documentation describes the parameter area as being
+adjacent to the return address. It is describing the callee's view after
+CALL, while [rsp+20h] in the source is the caller's view before CALL.
+
+Do not mix these two RSP values when calculating offsets.
+
+
+Why main reserves 38h
+---------------------
+
+The storage needed at the caller-side call site is:
+
+    20h  32 bytes of shadow space
+    08h   8 bytes for WriteFile's fifth argument
+    08h   8-byte slot for the bytes-written output
+    ----
+    30h  48 bytes of storage
+
+The storage total is 30h. That number is separate from the alignment
+question. For a normally called Windows x64 procedure, the 8-byte return
+address means the procedure begins with RSP 8 bytes off a 16-byte boundary.
+Subtracting 30h, a multiple of 16, would preserve that offset. The
+additional 08h changes the alignment:
+
+    30h storage
+    08h alignment adjustment
+    ----
+    38h total reservation
+
+The padding is not another API parameter. It is unused space that makes the
+call-site RSP correctly aligned.
+
+For example, if main's entry RSP were 1008h:
+
+    1008h - 0030h = 0FD8h  ; ends in 8, still misaligned
+    1008h - 0038h = 0FD0h  ; ends in 0, 16-byte aligned
+
+This 1008h example is a hypothetical normal-procedure entry value; it is not
+an assertion about the exact initial RSP chosen by Windows for a raw process
+entry point. This lesson's main is selected with /entry:main, not called by a
+source-level CALL from a C function. The reliable rule is:
+
+  1. Identify which RSP you are using: caller before CALL or callee after CALL.
+  2. Calculate storage requirements.
+  3. Choose padding so RSP has the required call-site alignment.
+  4. Recompute offsets from the new RSP, not from the old one.
+
+This is why [rsp+20h] in main becomes [rsp+28h] from WriteFile's viewpoint:
+CALL pushed an 8-byte return address between the two viewpoints.
+
+
+Exercises
+---------
+
+1. Change message and verify that the exit status changes.
+2. Remove the final zero byte. What does string_length do?
+3. Replace xor eax, eax with mov rax, 0.
+4. Create a second null-terminated string and call string_length on it.
+5. Rewrite the loop using a pointer that advances one byte at a time instead
+   of an index in RAX.
+6. Add a string_copy procedure that copies bytes through the null terminator.
+7. Modify string_length to count only ASCII alphabetic characters.
+
+The next lesson will use comparisons and conditional branches to inspect
+the result of WriteFile and choose a success or failure exit status.
