@@ -1,0 +1,18 @@
+﻿PREREQUISITES FOR LESSON 1
+==========================
+
+Before starting, ensure you have:
+
+  [ ] Visual Studio Build Tools or Visual Studio installed on Windows
+  [ ] ml64.exe and link.exe accessible (via Developer PowerShell or PATH)
+  [ ] kernel32.lib available to the linker
+  [ ] A text editor or IDE (Neovim, VS Code, Visual Studio, etc.)
+  [ ] PowerShell or Command Prompt to run build commands
+
+Recommended reading:
+
+  * ../glossary.txt — key assembly terminology
+  * ../concepts/windows-x64-calling-convention.txt — calling convention overview
+
+If you have the tools, you are ready to begin this lesson.
+

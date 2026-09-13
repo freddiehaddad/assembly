@@ -1,0 +1,32 @@
+﻿PREREQUISITES
+=============
+
+Before starting this lesson, verify that you can:
+
+  ☐ Build and run the previous lesson (Lesson 2)
+  ☐ Explain what a null-terminated string is
+  ☐ Describe the difference between assembly-time constants (equ) and
+    runtime values (in registers)
+  ☐ Identify which registers are volatile (caller-saved) and which are
+    nonvolatile (callee-saved)
+
+Before starting Lesson 3, understand:
+
+  * A procedure can take arguments in RCX, RDX, R8, R9
+  * A procedure returns a value in RAX
+  * You can use a loop and conditional branches to process data
+  * Null-terminated strings end with a zero byte (0x00)
+
+If you cannot confidently answer all checkpoints, review:
+
+  * lessons/03-string-length/lesson.txt — the full lesson
+  * lessons/concepts/windows-x64-calling-convention.txt — register arguments
+  * lessons/concepts/caller-vs-callee-rsp.txt — stack frame transformations
+  * lessons/02-console-output/lesson.txt — the previous lesson
+
+Recommended prior reading:
+
+  * lessons/01-exit/objectives.txt — Lesson 1 goals
+  * lessons/02-console-output/objectives.txt — Lesson 2 goals
+  * lessons/glossary.txt — key terminology
+
