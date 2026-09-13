@@ -1,0 +1,23 @@
+﻿LEARNING OBJECTIVES
+===================
+
+After completing this lesson, you will understand:
+
+  1. How the /entry linker flag selects the process entry point
+  2. Why a procedure must reserve stack space before calling an API
+  3. How stack alignment ensures correct API behavior
+  4. Why writing to 32-bit registers (e.g., ECX) affects 64-bit registers
+
+You will be able to:
+
+  1. Write a simple CRT-free executable that calls a Windows API
+  2. Pass integer arguments to Windows API functions
+  3. Calculate stack space requirements for a single API call
+  4. Build and run an assembly program with ml64 and link
+
+Success criteria:
+
+  * The executable exits with the status code you specify
+  * The build completes without errors or warnings
+  * You can explain why sub rsp, 28h is necessary
+

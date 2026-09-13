@@ -1,0 +1,26 @@
+﻿LEARNING OBJECTIVES
+===================
+
+After completing this lesson, you will understand:
+
+  1. How to call a Windows API without the C runtime
+  2. How the first four arguments are passed in registers
+  3. How the fifth argument is passed on the stack
+  4. Why shadow space must be reserved before every call
+  5. The difference between caller and callee stack perspectives
+
+You will be able to:
+
+  1. Call multiple Windows APIs in sequence (GetStdHandle, WriteFile)
+  2. Calculate and reserve the correct stack frame for multiple API calls
+  3. Store immediate values and addresses into stack-allocated slots
+  4. Read a Windows API signature and map arguments to registers and stack
+  5. Build a program that produces text output without printf
+
+Success criteria:
+
+  * The executable writes "Hello from x64 assembly!" to the console
+  * The exit status is 0 (success)
+  * You can explain what shadow space is and why it is required
+  * You can describe the transformation from caller RSP to callee RSP
+
