@@ -1,0 +1,81 @@
+﻿EXERCISES
+=========
+
+Tier 1: Verification
+---------------------
+
+These exercises confirm you can build and run the program.
+
+1. Change the message text to "Hi". Rebuild and run.
+   Verify the exit status is now 2 (the length without the null terminator).
+
+2. Add more characters to the message: "Hello, Assembly!". Rebuild and run.
+   Verify the exit status matches the string length (excluding newlines and null).
+
+3. Remove the 13, 10 (CR LF) from the message.
+   Does the exit status change? Why or why not?
+
+
+Tier 2: Understanding
+---------------------
+
+These exercises test deeper comprehension.
+
+4. Before you change anything, trace through string_length by hand:
+   message = "ABC", 13, 10, 0
+   
+   Draw the memory layout, then trace each iteration of the loop.
+   Predict the final RAX value.
+   Verify your prediction.
+
+5. Explain the difference between:
+   message_length equ $ - message - 1
+   
+   and the result of calling string_length at runtime.
+   
+   Why are they the same? When might they be different?
+   (Hint: think about dynamically-created strings.)
+
+6. Create a second string and call string_length on it.
+   Exit with the length of the second string.
+   Example:
+     name db "Alice", 0
+     Call string_length(name) and exit with that result.
+
+7. Research what registers are volatile (caller-saved) and nonvolatile
+   (callee-saved) in the Windows x64 ABI.
+   
+   Why does string_length not need to preserve RCX or RAX?
+
+
+Tier 3: Extension
+-----------------
+
+These exercises challenge you to apply the lesson to new problems.
+
+8. Modify string_length to count only alphabetic characters (A-Z, a-z).
+   Call it with the message and exit with the count.
+   
+   Example: "Hello123World" → 10 (the letters only)
+   
+   Challenge: Learn how to use the CMP instruction to test character ranges.
+
+9. Write a procedure named "count_char" that takes two arguments:
+   - RCX: address of a null-terminated string
+   - R8D: a character code to search for (e.g., 'a' = 0x61)
+   
+   The procedure returns in RAX the number of times that character appears
+   in the string.
+   
+   Test it: count 'a' in "banana" → should be 3.
+
+10. Write a procedure named "string_copy" that takes two arguments:
+    - RCX: source address (null-terminated string)
+    - RDX: destination address (writable buffer)
+    
+    The procedure copies the string (including the null terminator) to the
+    destination, then returns the number of bytes copied in RAX.
+    
+    Verify with a known source and inspect the destination memory afterward.
+    Challenge: Ensure the destination is a valid stack-allocated buffer.
+

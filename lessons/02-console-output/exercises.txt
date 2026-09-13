@@ -1,0 +1,73 @@
+﻿EXERCISES
+=========
+
+Tier 1: Verification
+---------------------
+
+These exercises confirm you can build and run the program.
+
+1. Change the message text to "Hello, World!". Rebuild and run.
+   Verify that the text appears on the console.
+
+2. Remove the ", 13, 10" (carriage return and line feed) from message.
+   Rebuild and run. What changes about the output?
+
+3. Add a third line to the message:
+   message db "Line 1", 13, 10, "Line 2", 13, 10, 0
+   
+   Update message_length to exclude the null terminator.
+   Rebuild and run.
+
+
+Tier 2: Understanding
+---------------------
+
+These exercises test deeper comprehension.
+
+4. Before you change anything, predict what will happen:
+   Replace "mov ecx, STD_OUTPUT_HANDLE" with "mov ecx, -10".
+   
+   Will WriteFile still work? Why or why not?
+   Verify your prediction. (Research the constants in the Windows API.)
+
+5. Inspect RAX after WriteFile returns. Add a second call to ExitProcess
+   with the low byte of RAX as the exit status.
+   
+   Does the exit status indicate success or failure?
+   (Hint: nonzero = success, zero = failure for WriteFile.)
+
+6. Explain why we use LEA to get the message address:
+   lea rdx, message
+   
+   Could we use "mov rdx, message" instead? Why or why not?
+
+7. Calculate the exact bytes passed to WriteFile.
+   How many bytes are in the message, including the CR and LF?
+   Verify against the exit status from Exercise 5.
+
+
+Tier 3: Extension
+-----------------
+
+These exercises challenge you to apply the lesson to new problems.
+
+8. Write a second message string and write it to the console with a second
+   WriteFile call. Do not call GetStdHandle again; reuse the handle from
+   the first call.
+   
+   Example output:
+     Hello from x64 assembly!
+     Second message here.
+
+9. Modify the program to write the message 3 times in a row without
+   calling GetStdHandle multiple times.
+
+10. Create a procedure named "write_message" that takes two arguments:
+    - RCX: address of the message string (null-terminated)
+    - RDX: the stdout handle (from a prior GetStdHandle call)
+    
+    The procedure calls WriteFile to output the string, then returns.
+    Modify main to call write_message twice with different messages.
+    
+    Challenge: Handle the fact that this procedure needs its own stack frame.
+
