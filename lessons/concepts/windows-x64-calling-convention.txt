@@ -1,0 +1,183 @@
+﻿WINDOWS x64 CALLING CONVENTION
+==============================
+
+This is a reference for the Microsoft x64 calling convention used throughout
+these lessons. Understanding this convention is essential for writing correct
+CRT-free assembly on Windows.
+
+Overview
+--------
+
+The Windows x64 calling convention (also called the Microsoft x64 ABI) defines:
+
+  * Which registers receive arguments
+  * How stack arguments are passed
+  * How return values are received
+  * Which registers the caller and callee must preserve
+  * Stack alignment requirements
+  * The layout of the stack frame at entry and exit
+
+Register Arguments
+------------------
+
+The first four integer or pointer arguments are passed in registers, from left
+to right:
+
+    Argument 1: RCX
+    Argument 2: RDX
+    Argument 3: R8
+    Argument 4: R9
+
+Writing to a 32-bit register (ECX, EDX, R8D, R9D) automatically clears the
+upper 64-bit register. Use the width matching the parameter type.
+
+Example: A function taking four DWORD arguments receives them in ECX, EDX,
+R8D, and R9D.
+
+Stack Arguments
+---------------
+
+Arguments beyond the first four are passed on the stack. These are placed
+after the shadow space (see below).
+
+Example: WriteFile has five arguments:
+
+    hFile                    RCX
+    lpBuffer                 RDX
+    nNumberOfBytesToWrite    R8D
+    lpNumberOfBytesWritten   R9
+    lpOverlapped              [caller RSP + 20h]
+
+From the caller's perspective before CALL, the fifth argument is at [rsp+20h]
+because the first 20h (32) bytes are reserved for shadow space.
+
+After CALL pushes the return address, the callee sees the same argument at
+[rsp+28h].
+
+Shadow Space
+------------
+
+The caller must reserve 32 bytes (20h) of shadow space before every call, even
+if the called function has only one argument or uses no stack arguments at all.
+
+This is the Windows x64 ABI's guarantee to the callee: there are always four
+8-byte home slots for the first four arguments, immediately following the
+return address.
+
+From the caller before CALL:
+
+    [rsp+00h .. rsp+07h]  home slot 1
+    [rsp+08h .. rsp+0Fh]  home slot 2
+    [rsp+10h .. rsp+17h]  home slot 3
+    [rsp+18h .. rsp+1Fh]  home slot 4
+    [rsp+20h ..]          fifth and later stack arguments
+
+The callee may use these slots to save register arguments if it needs
+stack-addressable copies. It is not required to; the space simply must exist.
+
+Return Values
+-------------
+
+Integer and pointer return values are placed in:
+
+    RAX / EAX   primary return value (64 bits or 32 bits)
+
+Floating-point return values use XMM0 and XMM1 (not covered in this course).
+
+Volatile and Nonvolatile Registers
+-----------------------------------
+
+Volatile registers (caller-saved):
+    RAX, RCX, RDX, R8, R9, R10, R11
+
+The callee may modify these without preserving them. If the caller needs their
+values after a call, it must save them first.
+
+Nonvolatile registers (callee-saved):
+    RBX, RBP, RSI, RDI, RSP, R12-R15
+
+The callee must preserve these if it uses them. It may do so by saving and
+restoring them in the prologue and epilogue.
+
+Stack Alignment
+---------------
+
+The stack must be 16-byte aligned at every CALL instruction. Due to CALL
+pushing an 8-byte return address, the procedure begins with RSP 8 bytes off a
+16-byte boundary.
+
+A normally called procedure enters with:
+
+    RSP mod 16 = 8
+
+To satisfy the alignment requirement at the next call within the procedure,
+reserve an amount that changes the alignment from (RSP mod 16 = 8) to
+(RSP mod 16 = 0).
+
+Example: If RSP = 1008h (which is 8 mod 16):
+
+    sub rsp, 30h → RSP = 0FD8h (still 8 mod 16, not aligned)
+    sub rsp, 38h → RSP = 0FD0h (0 mod 16, aligned)
+
+The additional 8 bytes beyond the minimum storage requirement are alignment
+padding, not local variables or arguments.
+
+Calling Sequence
+----------------
+
+Caller's responsibility:
+
+    1. Place first four arguments in RCX, RDX, R8, R9
+    2. Place remaining arguments on the stack in left-to-right order
+    3. Reserve 32 bytes of shadow space plus any stack arguments
+    4. Reserve additional space for caller's locals or temporary workspace
+    5. Ensure RSP is 16-byte aligned before CALL
+    6. Execute CALL
+    7. After return, restore RSP and any volatile registers
+
+Callee's responsibility:
+
+    1. Save nonvolatile registers if used
+    2. Reserve space for local variables if needed
+    3. Execute the function body
+    4. Place return value in RAX (or XMM0 for floats)
+    5. Restore nonvolatile registers
+    6. Execute RET
+
+The callee does not restore RSP; that is the caller's responsibility.
+
+Common Pattern in These Lessons
+-------------------------------
+
+Our lessons use this pattern:
+
+    proc_name proc
+        ; Reserve space for shadow space, stack arguments, and locals
+        sub rsp, frame_size
+
+        ; Set up arguments for the first call
+        mov ecx, arg1
+        mov edx, arg2_address
+        mov r8d, arg3
+        lea r9, [rsp+local_offset]
+        mov qword ptr [rsp+20h], arg5
+
+        call SomeAPI
+
+        ; Set up arguments for the second call
+        mov ecx, next_arg1
+        call AnotherAPI
+
+        ; Return or exit
+        ret
+    proc_name endp
+
+This pattern avoids frame pointers (RBP) and uses only RSP-based addressing
+because our stack layouts are fixed and simple.
+
+See Also
+--------
+
+lessons/concepts/stack-alignment.txt
+lessons/concepts/caller-vs-callee-rsp.txt
+

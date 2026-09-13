@@ -1,0 +1,195 @@
+﻿CALLER RSP VERSUS CALLEE RSP
+============================
+
+This is one of the most confusing aspects of x64 assembly: the same memory
+location has different offsets depending on whether you are looking at it from
+the caller's perspective or the callee's perspective.
+
+The Problem
+-----------
+
+The source code says:
+
+    mov qword ptr [rsp+20h], 0
+
+But from the callee's perspective, the same location might be at [rsp+28h].
+
+This is not a mistake. It is a consequence of the CALL instruction pushing the
+return address.
+
+Entry and Exit Perspective
+---------------------------
+
+CALLER (before CALL):
+
+    The caller sets up arguments and reserves stack space.
+    The caller's RSP points to a specific memory location.
+    All offsets are measured from that RSP.
+
+CALLEE (after CALL):
+
+    The CALL instruction has pushed an 8-byte return address.
+    The callee's RSP is 8 bytes lower.
+    The same memory locations have different offsets from the new RSP.
+
+Concrete Example
+----------------
+
+Before CALL:
+
+    caller RSP = 0x1000
+    [rsp+20h] = [0x1020]  ← fifth argument location
+
+    CALL instruction
+
+    [return address pushed at 0x0FF8]
+    callee RSP = 0x0FF8
+
+After CALL:
+
+    The same memory location [0x1020] is now at:
+    [rsp+28h] = [0x0FF8 + 0x28] = [0x1020]  ✓ same location
+
+Why the Difference?
+
+    caller_offset = 0x20
+    callee_offset = 0x28
+    difference = 0x28 - 0x20 = 0x8 = size of return address
+
+The Transformation
+-------------------
+
+For any offset from the caller's perspective:
+
+    callee_offset = caller_offset + 8
+
+Examples:
+
+    caller [rsp+00h]  becomes  callee [rsp+08h]
+    caller [rsp+20h]  becomes  callee [rsp+28h]
+    caller [rsp+28h]  becomes  callee [rsp+30h]
+
+In Reverse:
+
+    callee_offset = caller_offset + 8
+    caller_offset = callee_offset - 8
+
+Which Perspective to Use in Source Code?
+-----------------------------------------
+
+**Always use the caller's perspective** when writing the call setup.
+
+You are the caller setting up arguments and reserving space. You know your own
+RSP. You do not know what the callee will do, and you cannot predict its RSP
+at entry.
+
+Example: Before calling WriteFile:
+
+    sub rsp, 38h
+    mov qword ptr [rsp+20h], 0      ← caller's perspective
+    lea r9, [rsp+28h]               ← caller's perspective
+    mov rcx, handle
+    mov rdx, buffer_address
+    mov r8d, byte_count
+    call WriteFile
+
+This is correct. WriteFile will see these same locations at different offsets
+when it begins, but that is WriteFile's concern.
+
+Why This Matters for Understanding Documentation
+-------------------------------------------------
+
+Microsoft's documentation says:
+
+    The parameter area is always at the bottom of the stack (even if alloca
+    is used), so that it will always be adjacent to the return address during
+    any function call.
+
+This describes the callee's view. After CALL, from the callee's perspective,
+the parameter area is immediately above the return address.
+
+So when reading documentation that describes the callee's frame, remember: it
+is describing the post-CALL layout.
+
+A Common Gotcha
+----------------
+
+A learner might write:
+
+    sub rsp, 38h
+    lea r9, [rsp+28h]    ← correct: this is caller's perspective
+    call WriteFile
+
+And then think:
+
+    "I reserved 38h bytes. The return address will be at [rsp+00h].
+     The shadow space will be at [rsp+08h..27h].
+     The fifth argument will be at [rsp+28h..2Fh]."
+
+This is **wrong from the callee's perspective**. But it is **correct from the
+caller's perspective**, which is what matters for setting up the call.
+
+After CALL, WriteFile sees:
+
+    [rsp+00h..07h]    return address
+    [rsp+08h..27h]    shadow space
+    [rsp+28h..2Fh]    fifth argument
+
+That is consistent with the callee's view. The transformation is:
+
+    caller [00h] → callee [08h]  (shadow space starts at callee [08h])
+    caller [20h] → callee [28h]  (fifth argument)
+
+The Rules
+---------
+
+1. **When setting up a call, use the caller's RSP and offsets.**
+
+2. **When inside a callee, use the callee's RSP and offsets.**
+
+3. **The callee's offsets are always 8 bytes higher than the caller's for the
+   same location.**
+
+4. **Never mix caller and callee perspectives in a single offset calculation.**
+
+5. **If you need to pass an address to the callee, use the caller's
+   perspective** (e.g., lea r9, [rsp+28h]).
+
+Example: Correct and Incorrect
+-------------------------------
+
+CORRECT:
+
+    caller proc
+        sub rsp, 38h
+        lea r9, [rsp+28h]        ← caller perspective
+        call callee
+        add rsp, 38h
+        ret
+    caller endp
+
+    callee proc
+        mov qword ptr [rsp+28h], some_value  ← callee perspective
+        ret
+    callee endp
+
+INCORRECT:
+
+    caller proc
+        sub rsp, 38h
+        lea r9, [rsp+30h]        ← wrong! used callee perspective
+        call callee
+        add rsp, 38h
+        ret
+    caller endp
+
+Why Incorrect? Because r9 is set by the caller, so you must use the caller's
+offset. [rsp+30h] from the caller is [rsp+38h] from the callee, which is beyond
+the local storage.
+
+See Also
+--------
+
+lessons/concepts/stack-alignment.txt
+lessons/concepts/windows-x64-calling-convention.txt
+
