@@ -1,0 +1,121 @@
+﻿ASSEMBLY GLOSSARY
+=================
+
+A reference for terms used in these lessons.
+
+CALLING CONVENTION
+  A set of rules defining how procedures receive arguments, return values,
+  preserve registers, and align the stack. Windows x64 is the convention
+  used in this course.
+
+CALLEE
+  A procedure being called. It receives arguments, executes, and returns a value.
+  The callee's RSP is 8 bytes lower than the caller's pre-CALL RSP.
+
+CALLER
+  A procedure making a call to another procedure. The caller sets up arguments,
+  executes CALL, and resumes after the callee returns.
+
+DISPLACEMENT (or OFFSET)
+  A constant added to a base address. In [rsp+20h], the 20h is the displacement.
+
+IMMEDIATE
+  A constant value encoded in the instruction. In "mov ecx, 42", the 42 is
+  an immediate.
+
+OPERAND
+  A value or location operated on by an instruction. In "mov ecx, 42", both
+  ecx and 42 are operands.
+
+REGISTER
+  A named storage location inside the CPU (e.g., RAX, RBP). Used for fast
+  access to values during computation.
+
+SHADOW SPACE (or HOME SPACE)
+  32 bytes (4 slots × 8 bytes) reserved by the caller for the callee's first
+  four register-passed arguments. See lessons/concepts/windows-x64-calling-convention.txt.
+
+STACK
+  Memory region used for temporary storage, local variables, and function
+  parameters. Grows toward lower addresses on x86-64.
+
+STACK POINTER (RSP)
+  A register (RSP) that points to the current top of the stack. Decreases
+  when space is allocated (via SUB), increases when space is freed (via ADD).
+
+VOLATILE REGISTER (or CALLER-SAVED)
+  A register that may be modified by a called procedure. The caller must
+  preserve its value if needed. Examples: RAX, RCX, RDX, R8, R9, R10, R11.
+
+NONVOLATILE REGISTER (or CALLEE-SAVED)
+  A register that must be preserved by a called procedure. If the callee uses
+  it, it must save and restore the original value. Examples: RBX, RSI, RDI,
+  RBP, R12-R15.
+
+NULL-TERMINATED STRING
+  A sequence of bytes followed by a zero byte (0x00). Used in C and assembly
+  to mark the end of a string without storing a separate length.
+
+LEAF PROCEDURE
+  A procedure that does not call any other procedure. Often simpler because it
+  may not need to reserve stack space for called-function arguments.
+
+PROLOGUE
+  Instructions at the start of a procedure to set up the stack frame and save
+  nonvolatile registers.
+
+EPILOGUE
+  Instructions at the end of a procedure to restore the stack frame, restore
+  nonvolatile registers, and return to the caller.
+
+FRAME POINTER
+  A register (often RBP) used as a stable reference point for local variables
+  and parameters. Optional on x86-64; not always used.
+
+PTRSIZE (or PTR)
+  A MASM qualifier specifying the width of a memory operand.
+  "mov qword ptr [rsp+20h], 0" specifies an 8-byte store.
+
+SECTION
+  A named region in an object file or executable. Common sections: .code
+  (executable), .data (initialized data), .const (read-only data).
+
+ASSEMBLER
+  A tool that translates assembly source code into machine code. In these
+  lessons, ml64.exe is the MASM assembler.
+
+LINKER
+  A tool that combines object files and libraries into an executable.
+  In these lessons, link.exe is the Windows linker.
+
+OBJECT FILE
+  Intermediate file produced by the assembler, containing machine code and
+  references to external symbols. Later linked into an executable.
+
+SYMBOL
+  A name for a location in code or data (e.g., main, message). Defined in
+  one file and referenced (imported) in another via extern.
+
+CALLING A PROCEDURE
+  The CALL instruction:
+    1. Pushes the return address (8 bytes) onto the stack.
+    2. Transfers control to the procedure's first instruction.
+
+RETURNING FROM A PROCEDURE
+  The RET instruction:
+    1. Pops the return address from the stack.
+    2. Jumps to that address (back to the caller).
+
+SIGN EXTENSION
+  When a smaller value is written to a register, filling the upper bits with
+  the sign bit. Writing to ECX (32-bit) clears the upper 32 bits of RCX
+  (because 32-bit values in x64 are zero-extended, not sign-extended).
+
+See Also
+--------
+
+lessons/concepts/ — detailed reference documents
+lessons/01-exit/ — Lesson 1: basic concepts
+lessons/02-console-output/ — Lesson 2: API calls and stack
+lessons/03-string-length/ — Lesson 3: procedures and loops
+

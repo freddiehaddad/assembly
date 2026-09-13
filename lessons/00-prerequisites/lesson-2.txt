@@ -1,0 +1,19 @@
+﻿PREREQUISITES FOR LESSON 2
+==========================
+
+Before starting this lesson, verify that you can:
+
+  [ ] Build and run Lesson 1 (exit.exe produces the correct exit status)
+  [ ] Explain what "extern ExitProcess:proc" does
+  [ ] Explain why "sub rsp, 28h" is necessary before a CALL
+  [ ] Describe what the /entry:main linker flag does
+
+If you cannot confidently answer all four checkpoints, review:
+
+  * lessons/01-exit/lesson.txt — the full Lesson 1 explanation
+  * lessons/01-exit/objectives.txt — Lesson 1 learning goals
+  * lessons/01-exit/common-mistakes.txt — common errors and fixes
+  * lessons/glossary.txt — terminology
+
+Once you are ready, begin lessons/02-console-output/lesson.txt.
+

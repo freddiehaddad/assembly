@@ -1,0 +1,21 @@
+﻿PREREQUISITES FOR LESSON 3
+==========================
+
+Before starting this lesson, verify that you can:
+
+  [ ] Build and run Lesson 2 (hello.exe prints text to the console)
+  [ ] Explain the Windows x64 calling convention (registers for first 4 args)
+  [ ] Explain caller vs. callee RSP and why offsets differ by 8 bytes
+  [ ] Describe how WriteFile receives its five arguments
+  [ ] Define what a null-terminated string is
+
+If you cannot confidently answer all five checkpoints, review:
+
+  * lessons/02-console-output/lesson.txt — the full Lesson 2 explanation
+  * lessons/concepts/windows-x64-calling-convention.txt — API arguments
+  * lessons/concepts/caller-vs-callee-rsp.txt — RSP offset transformation
+  * lessons/02-console-output/common-mistakes.txt — common errors
+  * lessons/glossary.txt — terminology
+
+Once you are ready, begin lessons/03-string-length/lesson.txt.
+
