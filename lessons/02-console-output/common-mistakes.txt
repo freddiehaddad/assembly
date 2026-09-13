@@ -1,0 +1,59 @@
+﻿COMMON MISTAKES
+===============
+
+Mistake 1: Storing the fifth argument at the wrong offset
+  Error: WriteFile fails with an access violation or data corruption.
+  Cause: You used [rsp+28h] from the caller's perspective instead of [rsp+20h].
+  Fix:   Before CALL, use the caller's RSP offsets.
+         mov qword ptr [rsp+20h], 0  ← correct (caller's view)
+         Not: mov qword ptr [rsp+28h], 0  ← wrong (callee's view)
+         See lessons/concepts/caller-vs-callee-rsp.txt
+
+Mistake 2: Reserving only 30h bytes instead of 38h
+  Error: WriteFile works sometimes but crashes unpredictably or on certain systems.
+  Cause: Stack misalignment: 30h is 48 bytes, but 48 mod 16 = 0, not 8.
+         The call-site RSP is misaligned.
+  Fix:   Reserve 38h (56 bytes): 30h storage + 08h alignment padding.
+         See lessons/concepts/stack-alignment.txt
+
+Mistake 3: Forgetting to load the stdout handle
+  Error: "The handle is invalid" or WriteFile returns FALSE.
+  Cause: You passed a garbage value or 0 as the file handle.
+  Fix:   Always call GetStdHandle(STD_OUTPUT_HANDLE) first:
+         mov ecx, STD_OUTPUT_HANDLE
+         call GetStdHandle
+         mov rcx, rax  ← save the returned handle
+
+Mistake 4: Using the wrong constant for STD_OUTPUT_HANDLE
+  Error: WriteFile receives an invalid handle.
+  Cause: You used a different magic number instead of -11.
+  Fix:   Use -11 (or 0xFFFFFFF5 when sign-extended to 64 bits).
+         STD_OUTPUT_HANDLE equ -11
+
+Mistake 5: Passing message bytes instead of a pointer
+  Error: WriteFile crashes or writes garbage.
+  Cause: You used the message data directly instead of its address.
+  Fix:   Use LEA to compute the address:
+         lea rdx, message  ← correct: RDX = address of message
+         Not: mov rdx, message  ← wrong: RDX = first 8 bytes of message
+
+Mistake 6: Forgetting the bytes-written output buffer
+  Error: WriteFile returns success but you have no way to verify how many bytes it wrote.
+  Cause: You passed NULL for lpNumberOfBytesWritten without documentation.
+  Fix:   Reserve a local slot and pass its address:
+         lea r9, [rsp+28h]
+         WriteFile will write the byte count there.
+
+Mistake 7: Misunderstanding qword ptr
+  Error: "ambiguous operand size" or the instruction encodes incorrectly.
+  Cause: You wrote "mov [rsp+20h], 0" without specifying the width.
+  Fix:   Add qword ptr to clarify 8-byte width:
+         mov qword ptr [rsp+20h], 0
+
+Mistake 8: Using the wrong register width
+  Error: The function receives a truncated or incorrect value.
+  Cause: You used R8 (64-bit) instead of R8D (32-bit) for a DWORD parameter.
+  Fix:   Match the register width to the parameter type:
+         DWORD → 32-bit: mov r8d, message_length
+         QWORD → 64-bit: mov r9, handle
+

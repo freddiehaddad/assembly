@@ -1,0 +1,38 @@
+﻿COMMON MISTAKES
+===============
+
+Mistake 1: Forgetting /entry:main on the linker command
+  Error: "undefined reference to mainCRTStartup"
+  Cause: The linker searches for the default C runtime entry point.
+  Fix:   Use /entry:main to specify your procedure as the entry point.
+         link /subsystem:console /entry:main exit.obj kernel32.lib /out:exit.exe
+
+Mistake 2: Using the wrong procedure name in /entry
+  Error: "undefined symbol: main"
+  Cause: The linker cannot find a procedure named main.
+  Fix:   Make sure the procedure name (before "proc") matches /entry:main exactly.
+         Tip: Use option casemap:none to prevent case-folding surprises.
+
+Mistake 3: Forgetting to reserve stack space
+  Error: Program crashes or produces garbage output on certain systems.
+  Cause: Stack misalignment violates the Windows x64 ABI.
+  Fix:   Always use "sub rsp, 28h" before calling an API.
+         See lessons/concepts/stack-alignment.txt for details.
+
+Mistake 4: Using external symbols without extern declaration
+  Error: "undefined symbol: ExitProcess"
+  Cause: MASM does not know ExitProcess is supplied by another file.
+  Fix:   Declare it at the top: extern ExitProcess:proc
+
+Mistake 5: Forgetting kernel32.lib when linking
+  Error: "unresolved external symbol ExitProcess"
+  Cause: The linker has no import library to resolve the symbol.
+  Fix:   Add kernel32.lib to the link command:
+         link /subsystem:console /entry:main exit.obj kernel32.lib /out:exit.exe
+
+Mistake 6: Using "end main" instead of "end"
+  Error: "syntax error: main"
+  Cause: /entry:main already specifies the entry point; "end main" is redundant
+         and causes a parse error.
+  Fix:   Use plain "end" at the end of the file.
+

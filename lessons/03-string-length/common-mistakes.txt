@@ -1,0 +1,67 @@
+﻿COMMON MISTAKES
+===============
+
+Mistake 1: Null terminator in the wrong place
+  Error: string_length does not find the end of the string.
+  Cause: You placed the 0 byte in the data definition but not at the expected position.
+  Fix:   Ensure message ends with a 0 byte:
+         message db "Hello", 0  ← correct
+         Not: message db "Hello"  ← missing terminator
+
+Mistake 2: Using message_length (assembly-time constant) instead of string_length (runtime procedure)
+  Error: The exit status is hardcoded, not the actual string length.
+  Cause: You used the wrong name or forgot to call string_length.
+  Fix:   Call the string_length procedure:
+         lea rcx, message
+         call string_length
+         mov ecx, eax  ← exit with the returned length
+
+Mistake 3: string_length exits at the wrong offset
+  Error: The length is off by one or includes the null terminator.
+  Cause: You branched to length_done at the wrong point.
+  Fix:   Exit the loop when you find the 0 byte, before incrementing RAX:
+         cmp byte ptr [rcx+rax], 0
+         je length_done   ← exit here with the correct count
+         inc rax
+         jmp length_loop
+
+Mistake 4: Infinite loop in string_length
+  Error: The program hangs.
+  Cause: The loop condition is never true or never executed.
+  Fix:   Verify the loop structure:
+         - RCX contains a valid string address
+         - RAX starts at 0
+         - CMP correctly reads memory
+         - JE branches to length_done when byte equals 0
+
+Mistake 5: Forgetting to preserve caller-saved registers
+  Error: Values passed to string_length are modified.
+  Cause: string_length uses RCX and RAX, which are volatile; the caller should not expect
+         them to survive the call.
+  Fix:   This is not a mistake in string_length; it is a feature. RCX and RAX are
+         "caller-saved," so any caller must save them before calling string_length
+         if it needs their values afterward. This lesson does not need to do so.
+
+Mistake 6: Reading the same byte repeatedly
+  Error: The loop never advances.
+  Cause: You read [rcx+rax] but never increment RAX.
+  Fix:   Use INC to advance the index:
+         inc rax
+         jmp length_loop
+
+Mistake 7: Using the wrong instruction to read memory
+  Error: The memory access fails or produces garbage.
+  Cause: You used an instruction that does not support [rcx+rax] addressing.
+  Fix:   Use CMP with byte ptr to read a single byte:
+         cmp byte ptr [rcx+rax], 0  ← correct
+         Not: cmp [rcx+rax], 0  ← ambiguous operand size
+
+Mistake 8: Returning in the wrong register
+  Error: ExitProcess receives garbage or 0 instead of the string length.
+  Cause: You did not place the return value in RAX or you modified it before returning.
+  Fix:   Leave the length in RAX at the RET instruction:
+         length_done:
+           ret  ← RAX contains the count here
+         Then in main:
+           mov ecx, eax  ← copy the result before calling the next function
+
