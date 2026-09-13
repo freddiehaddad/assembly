@@ -1,4 +1,4 @@
-LESSON 2: CONSOLE OUTPUT WITHOUT THE CRT
+﻿LESSON 2: CONSOLE OUTPUT WITHOUT THE CRT
 ========================================
 
 Goal
@@ -76,6 +76,10 @@ The source program
 
 The Windows x64 calling convention
 ----------------------------------
+
+For a comprehensive reference, see:
+
+  * lessons/concepts/windows-x64-calling-convention.txt
 
 The first four integer or pointer arguments to a function are passed in:
 
@@ -205,6 +209,11 @@ The current lesson ignores that result and always exits with status 0.
 Why the stack allocation is 38h
 --------------------------------
 
+For detailed stack-alignment rules and calculations, see:
+
+  * lessons/concepts/stack-alignment.txt
+  * lessons/concepts/caller-vs-callee-rsp.txt
+
 The instruction:
 
     sub rsp, 38h
@@ -314,3 +323,4 @@ Exercises
 
 The next lesson will use the WriteFile return value with a conditional
 branch, then introduce simple error handling.
+

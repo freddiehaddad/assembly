@@ -1,4 +1,4 @@
-LESSON 1: A CRT-FREE WINDOWS x64 EXECUTABLE
+﻿LESSON 1: A CRT-FREE WINDOWS x64 EXECUTABLE
 ============================================
 
 Goal
@@ -144,6 +144,12 @@ the procedure and /entry symbol.
 Stack frames and MASM
 ---------------------
 
+For a detailed explanation of stack alignment and the Windows x64 calling
+convention, see:
+
+  * lessons/concepts/windows-x64-calling-convention.txt
+  * lessons/concepts/stack-alignment.txt
+
 MASM does not require the traditional frame-pointer sequence. The processor
 also does not require it. A classic frame looks like this:
 
@@ -224,3 +230,4 @@ The CRT is not being used. ExitProcess is a documented Windows API function,
 and kernel32.lib is an import library used by the linker to connect the
 executable to that API. Calling a Windows API is different from calling a
 C-runtime function such as printf or exit.
+

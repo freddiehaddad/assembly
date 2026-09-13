@@ -1,4 +1,4 @@
-LESSON 3: STRINGS, POINTERS, LOOPS, AND PROCEDURES
+﻿LESSON 3: STRINGS, POINTERS, LOOPS, AND PROCEDURES
 ==================================================
 
 Goal
@@ -234,6 +234,10 @@ the high-address end.
 Caller RSP versus callee RSP
 ----------------------------
 
+For a detailed explanation of this transformation, see:
+
+  * lessons/concepts/caller-vs-callee-rsp.txt
+
 The CALL instruction pushes an 8-byte return address. Consequently, when
 WriteFile begins, its RSP is 8 bytes lower than main's RSP at the call:
 
@@ -315,3 +319,4 @@ Exercises
 
 The next lesson will use comparisons and conditional branches to inspect
 the result of WriteFile and choose a success or failure exit status.
+
