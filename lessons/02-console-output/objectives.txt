@@ -1,26 +1,14 @@
-﻿LEARNING OBJECTIVES
+LESSON 2: OBJECTIVES
 ===================
 
-After completing this lesson, you will understand:
+After the core exercises, you should be able to:
 
-  1. How to call a Windows API without the C runtime
-  2. How the first four arguments are passed in registers
-  3. How the fifth argument is passed on the stack
-  4. Why shadow space must be reserved before every call
-  5. The difference between caller and callee stack perspectives
+  [ ] Distinguish a byte, an address, a pointer, and a HANDLE.
+  [ ] Explain DB, EQU, LEA, and the size in QWORD PTR.
+  [ ] Map all five WriteFile arguments to registers and a stack slot.
+  [ ] Distinguish the BOOL return value from the bytes-written output.
+  [ ] Derive 38h for this frame and explain both RSP viewpoints.
+  [ ] Identify why a volatile register cannot hold live state across a call.
 
-You will be able to:
-
-  1. Call multiple Windows APIs in sequence (GetStdHandle, WriteFile)
-  2. Calculate and reserve the correct stack frame for multiple API calls
-  3. Store immediate values and addresses into stack-allocated slots
-  4. Read a Windows API signature and map arguments to registers and stack
-  5. Build a program that produces text output without printf
-
-Success criteria:
-
-  * The executable writes "Hello from x64 assembly!" to the console
-  * The exit status is 0 (success)
-  * You can explain what shadow space is and why it is required
-  * You can describe the transformation from caller RSP to callee RSP
-
+Completion: Tiers 1 and 2 in exercises.txt, including the byte-count
+observation. The repeated-write extension is optional.

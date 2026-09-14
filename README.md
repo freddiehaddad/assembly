@@ -1,112 +1,56 @@
-﻿# x86-64 Assembly Lessons
+# x86-64 Assembly and Systems Programming
 
-This is a course teaching x86-64 Windows assembly with MASM (`ml64.exe`), the
-Microsoft calling convention, and the Windows linker. These programs avoid the C
-runtime entirely.
+Learn how instructions operate on data, how procedures cooperate, and how a
+program uses operating-system services. The target is Windows x64, using MASM
+(`ml64.exe`), Microsoft's linker, and the standard Windows x64 calling convention.
 
-## Course Roadmap
+The examples deliberately omit the C runtime (CRT) and use Windows APIs directly
+so that startup and library boundaries are visible. This is a dependency choice,
+not a different instruction set or calling convention. Lesson 1 explains where
+runtime startup would otherwise fit.
 
-1. Toolchain and the Windows x64 ABI
-   * MASM syntax, object files, linking, entry points
-   * Registers, stack alignment, shadow space
-   * Assignment: exit cleanly and return status codes
-1. Calling Windows APIs without the CRT
-   * Imports, `kernel32.lib`, API arguments and return values
-   * Assignment: write text to standard output
-1. Memory and data
-   * `.data`, `.const`, `.code`, pointers, arrays
-   * Assignment: implement string length and integer formatting
-1. Control flow and procedures
-   * Conditional branches, loops, stack frames, callee-saved registers
-   * Assignment: command-line argument printer
-1. Windows process startup
-   * `GetCommandLineA`, `CommandLineToArgvW`, environment access
-   * Assignment: a small argument-processing utility
-1. File I/O
-   * `CreateFileA`, `ReadFile`, `WriteFile`, `CloseHandle` 
-   * Assignment: file copy or hex dump utility
-1. Dynamic memory
-   * `VirtualAlloc`, manual buffers, heap-free data structures
-   * Assignment: dynamically growing text buffer
-1. Debugging and reverse engineering
-   * WinDbg or Visual Studio debugger, registers, stack, disassembly
-   * Assignment: debug a deliberately broken program
-1. PE structure and imports
-   * Executable layout, sections, import tables, relocations
-   * Assignment: inspect your own executable with available tooling
-1. Advanced Windows assembly
-   * Unicode APIs, callbacks, structured exception handling
-   * Optional: direct NT calls and why they are fragile
+## Keep the layers separate
 
-## Project Structure
+| Layer | What it defines | Example |
+| --- | --- | --- |
+| Instruction set (ISA) | CPU operations and their effects | `call`, `mov`, registers, addressing |
+| Assembler notation | How we express instructions and data | MASM's `qword ptr`, `db`, `proc` |
+| Calling convention (ABI) | How separately written procedures cooperate | Argument registers, shadow space, preservation |
+| Operating-system API | Services available to the program | `WriteFile`, `ExitProcess` |
 
-```text
-.
-├── .asm-lsp.toml
-├── .git
-├── .gitignore
-├── build.ps1                          shared build script
-├── glossary.txt                       assembly terminology
-├── README.md
-└── lessons/
-    ├── 00-prerequisites/
-    │   ├── README.txt                 getting started guide
-    │   ├── lesson-1.txt               readiness for Lesson 1
-    │   ├── lesson-2.txt               readiness for Lesson 2
-    │   └── lesson-3.txt               readiness for Lesson 3
-    ├── concepts/
-    │   ├── windows-x64-calling-convention.txt
-    │   ├── stack-alignment.txt
-    │   └── caller-vs-callee-rsp.txt
-    ├── 01-exit/
-    │   ├── prerequisites.txt          readiness checklist
-    │   ├── objectives.txt             learning goals
-    │   ├── lesson.txt                 full explanation
-    │   ├── common-mistakes.txt        error diagnosis
-    │   ├── exercises.txt              tiered practice
-    │   └── exit.asm
-    ├── 02-console-output/
-    │   ├── prerequisites.txt
-    │   ├── objectives.txt
-    │   ├── lesson.txt
-    │   ├── common-mistakes.txt
-    │   ├── exercises.txt
-    │   └── hello.asm
-    └── 03-string-length/
-        ├── prerequisites.txt
-        ├── objectives.txt
-        ├── lesson.txt
-        ├── common-mistakes.txt
-        ├── exercises.txt
-        └── string-length.asm
-```
+Do not confuse a convention with a CPU requirement, or an assembler directive
+with an instruction. Each lesson identifies the layer responsible for a rule.
 
-## Getting Started
+## Lessons
 
-1. Read `lessons/00-prerequisites/README.txt`
-2. Read `lessons/00-prerequisites/lesson-1.txt`
-3. Navigate to `lessons/01-exit/`
-4. Read `prerequisites.txt`, then `objectives.txt`
-5. Read `lesson.txt` and follow the build instructions
-6. Work through `exercises.txt` (Tier 1 → 2 → 3)
-7. Refer to `common-mistakes.txt` if you get stuck
+| Lesson | Main ideas | Program or assignment |
+| --- | --- | --- |
+| 1. `lessons\01-exit` | Toolchain, register widths, entry and termination, first call frame | Return a chosen exit status |
+| 2. `lessons\02-console-output` | Bytes and addresses, API types, stack arguments and output parameters | Write a byte buffer to standard output |
+| 3. `lessons\03-string-length` | String representation, loop invariants, procedure contracts, volatile registers | Implement and test string length |
 
-## Lesson Files
+Lessons 1-3 contain the student's completed programs.
 
-Each lesson directory contains:
+Later topics will include bounded buffers, integer representation and formatting,
+Unicode and argument vectors, file I/O, memory allocation, debugging, and PE
+structure. These are a roadmap, not prerequisites for the current exercises.
 
-- **prerequisites.txt**: Verify you are ready before starting
-- **objectives.txt**: Learning goals and success criteria
-- **lesson.txt**: Full explanation with examples and diagrams
-- **exercises.txt**: Three tiers of practice problems
-- **common-mistakes.txt**: Error diagnosis and fixes
-- **\*.asm**: Assembly source code
+## How to study
 
-## Reference Files
+Start at `lessons\01-exit\prerequisites.txt`. Prerequisites live only in their
+lesson directories. In each lesson:
 
-- **lessons/concepts/**: Reusable reference documents on key topics
-- **glossary.txt**: Assembly terminology
-- **build.ps1**: Shared build script (works in any lesson directory)
+1. Check `prerequisites.txt` and read the goals in `objectives.txt`.
+2. Read `lesson.txt`, predicting the checkpoint results before running code.
+3. Read the accompanying `.asm` worked example.
+4. Work through `exercises.txt`: observe, explain, then implement.
+5. Use `common-mistakes.txt` to diagnose discrepancies.
+
+The core exercises define completion; extension exercises are optional. A
+working executable is necessary but not sufficient: explain its data, register,
+and stack behavior. This course is being refined with its first student. Review
+the student's exercise before committing a new lesson; preparation alone does
+not mark it complete.
 
 ## Build and run
 
@@ -135,9 +79,14 @@ link /nologo /machine:x64 /subsystem:console /entry:main /nodefaultlib exit.obj 
 
 Use the manual linker command when an exercise changes the entry symbol.
 
-## Text-file conventions
+## References and file conventions
 
+`glossary.txt` defines terminology. The three documents in `lessons\concepts`
+cover the calling convention, alignment calculations, and changing RSP
+viewpoints. They are references to consult as needed, not required cover-to-cover
+reading before Lesson 1. Links in lesson text are relative to that text's folder.
+
+Repository text is ASCII with CRLF line endings and no byte-order mark.
 `.gitattributes` specifies CRLF working copies; Git may store normalized LF
-internally. `.editorconfig` specifies UTF-8 without a byte-order mark and CRLF
-line endings. Use ASCII characters in lesson text.
-
+internally. `.editorconfig` supplies matching editor settings. Neovim's
+`fileformat` should be `dos`.

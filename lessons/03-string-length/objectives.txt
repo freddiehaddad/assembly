@@ -1,28 +1,14 @@
-﻿LEARNING OBJECTIVES
+LESSON 3: OBJECTIVES
 ===================
 
-After completing this lesson, you will understand:
+After the core exercises, you should be able to:
 
-  1. How to write a reusable procedure in assembly
-  2. How to pass arguments to your own procedures
-  3. How procedures return values in RAX
-  4. How loops and conditional branches work
-  5. The difference between null-terminated strings and length-prefixed strings
+  [ ] Distinguish a buffer's stored size from a null-terminated string length.
+  [ ] State the readable-memory precondition for an unbounded string scan.
+  [ ] Trace CMP, JE, INC, and JMP using a loop invariant.
+  [ ] Explain indexed byte addressing and the return value in RAX.
+  [ ] Assign register-preservation responsibilities to caller and callee.
+  [ ] Explain why this leaf procedure needs no stack allocation.
 
-You will be able to:
-
-  1. Write a leaf procedure that takes one argument and returns a value
-  2. Use indexed addressing ([base + index]) to access array elements
-  3. Implement a loop with a conditional exit
-  4. Call your own procedure and use its return value
-  5. Define null-terminated strings and calculate their lengths
-  6. Debug a procedure by observing register and memory state
-
-Success criteria:
-
-  * The executable prints "Hello from x64 assembly!" and exits with status 26
-  * The string_length procedure correctly counts bytes before the null terminator
-  * You can modify string_length to work with any null-terminated string
-  * You can trace through the loop and explain when it exits
-  * You can explain why [rsp+20h] becomes [rsp+28h] inside the API call
-
+Completion: Tiers 1 and 2 in exercises.txt, including the empty-string and
+embedded-zero cases. Byte-counting extensions are optional.

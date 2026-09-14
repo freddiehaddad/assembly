@@ -1,233 +1,127 @@
-﻿LESSON 1: A CRT-FREE WINDOWS x64 EXECUTABLE
-============================================
+LESSON 1: FROM SOURCE TO A RUNNING PROCESS
+========================================
 
-Goal
-----
+Goal: build exit.asm and explain how it terminates with a chosen status.
+Read the source alongside this lesson; it is the complete worked example.
 
-Build and run a native Windows x64 executable written in MASM assembly,
-without using the C runtime (CRT). The program calls ExitProcess from the
-Windows API and exits with status code 42.
+1. SOURCE, OBJECT, EXECUTABLE
+----------------------------
 
-This lesson uses:
+    exit.asm --ml64--> exit.obj --link--> exit.exe
 
-  * x86-64 assembly
-  * MASM syntax and ml64.exe
-  * the Microsoft x64 calling convention
-  * the Windows linker
-  * kernel32.lib, which describes the Windows API imports
+The assembler encodes instructions and records symbols and relocations.
+The linker resolves symbols and produces a Windows PE executable.
+kernel32.lib is an import library: it describes Windows functions supplied
+by DLLs, rather than copying the Windows kernel into our program.
 
-Source program
---------------
+In the source:
 
-    option casemap:none
-
+    option casemap:none   keeps symbol names case-sensitive
     extern ExitProcess:proc
+                          declares a procedure defined elsewhere
+    .code                 begins executable code
+    main proc frame       begins our procedure and its unwind description
+    main endp             ends that procedure
+    end                   ends the source file
 
-    .code
+These are assembler directives, not instructions the processor executes.
+ml64's END does not accept an entry-symbol operand; use END, not END main.
 
-    main proc
-        sub rsp, 28h
-        mov ecx, 42
-        call ExitProcess
-    main endp
+2. ENTRY AND TERMINATION
+-----------------------
 
-    end
+/entry:main selects our procedure as the executable entry point. The name
+main is a choice; it is not related to the source filename and does not
+automatically create C's main(argc, argv) interface.
 
+Our startup path is:
 
-Building and running
---------------------
+    Windows startup -> our main -> ExitProcess
 
-Run these commands from a Visual Studio Developer PowerShell or x64 Native
-Tools Command Prompt:
+With ordinary C runtime startup, it would instead include:
 
-    ml64 /c /Fo exit.obj exit.asm
-    link /subsystem:console /entry:main exit.obj kernel32.lib /out:exit.exe
+    Windows startup -> mainCRTStartup -> user main -> runtime cleanup
+
+That startup code initializes runtime services and prepares arguments.
+Bypassing it changes startup and cleanup, not the Windows x64 calling
+convention. Calling a Windows API is valid in either arrangement.
+
+ExitProcess takes one 32-bit unsigned status value and does not return:
+
+    mov ecx, 42
+    call ExitProcess
+
+ECX supplies its first parameter. Writing ECX also clears the upper 32 bits
+of RCX. The value 42 is an exit status, not text printed to the terminal.
+An ordinary returning procedure would restore its frame and execute RET;
+this path terminates the process instead.
+
+Checkpoint: which tool needs to know where ExitProcess is provided?
+Which tool selects the executable entry point?
+
+3. THE FIRST CALL FRAME
+-----------------------
+
+The Windows ABI requires 32 bytes of shadow space for a callee, even one
+with a single argument. It also requires RSP to be 16-byte aligned at CALL.
+
+At our Windows x64 entry point, RSP is 8 modulo 16. For example:
+
+    Entry RSP:              1008h
+    After SUB RSP,28h:      0FE0h (a multiple of 16)
+
+We reserve 20h bytes of shadow space and 8 bytes of padding. From the new
+RSP, low address to high:
+
+    [rsp+00h .. rsp+1Fh]  shadow space for ExitProcess
+    [rsp+20h .. rsp+27h]  unused alignment padding
+    [rsp+28h .. rsp+2Fh]  our incoming return address, already present
+
+SUB reserves memory; it does not initialize it. RSP points to the first
+byte of the reserved block, not to its high-address end. CALL will push a
+new return address BELOW this block before entering ExitProcess.
+
+28h is the total allocation in this example, not a universal prologue.
+Later frames need different sizes. A frame pointer in RBP is unnecessary
+while RSP stays fixed in the body.
+
+The source annotates the allocation:
+
+    sub rsp, 28h
+    .allocstack 28h
+    .endprolog
+
+The dot-directives describe the prologue for Windows stack unwinding and
+debuggers; they do not subtract another 28h. We use these annotations from
+the start and study saved-register prologues in Lesson 4.
+
+Checkpoint: subtract 20h instead of 28h on paper. Does it reserve the
+shadow space? Does it produce an aligned call site? These are two tests.
+
+4. BUILD AND OBSERVE
+-------------------
+
+In this directory, in a Visual Studio x64 developer PowerShell:
+
+    ..\..\build.ps1 -Source exit.asm -NoRun
     .\exit.exe
     $LASTEXITCODE
 
-The final command should print:
+Expect no program output; PowerShell displays 42 for the final command.
+For the manual assembler/linker commands, see ..\..\README.md.
 
-    42
+Two more instructions used in the exercises:
 
-The executable's exit status is 42. It is not text printed to the console;
-PowerShell displays the process status after the program terminates.
+    xor ecx, ecx     sets ECX and all of RCX to zero; changes flags
+    inc ecx          adds one to ECX; changes arithmetic flags except CF
 
+MOV copies a value and does not change arithmetic flags. Flags become
+important for conditional branches in Lesson 3.
 
-Line-by-line explanation
-------------------------
+Continue with exercises.txt. Reference only as needed:
 
-    option casemap:none
-
-This tells MASM to preserve the case of identifiers. For example, MAIN,
-Main, and main are treated as different symbols. It is a good practice when
-using external Windows API names and when matching linker symbols exactly.
-
-    extern ExitProcess:proc
-
-This declares that a procedure named ExitProcess is defined elsewhere. The
-implementation is supplied by Windows, not by this source file. The linker
-will resolve the reference using kernel32.lib. "extern" is a MASM external
-symbol declaration; "extrn" is also commonly used for the same purpose.
-
-    .code
-
-This places subsequent instructions in the code section. It is analogous to
-the text segment in traditional Unix terminology. In the final Windows PE
-executable, this normally becomes a section named .text with executable
-permissions.
-
-    main proc
-
-This begins a MASM procedure named main. "main" is a symbol, not a filename
-and not a special required name. The matching directive,
-
-    main endp
-
-ends the procedure definition. PROC and ENDP are assembler directives; they
-do not themselves execute CPU instructions.
-
-    sub rsp, 28h
-
-The Windows x64 calling convention requires the caller to reserve 20h (32)
-bytes of shadow space for the called function. 28h is hexadecimal 40:
-
-    20h shadow space
-    08h alignment adjustment
-    28h total reservation
-
-The adjustment is not another argument or local variable. It makes the
-call-site RSP satisfy the required 16-byte alignment. A hexadecimal number
-with an h suffix is a value, while [rsp+20h] would be an offset from RSP.
-
-    mov ecx, 42
-
-The first integer or pointer argument to a Windows x64 function is passed in
-RCX. Writing to the 32-bit register ECX also clears the upper 32 bits of RCX,
-so this passes the 64-bit value 42 correctly.
-
-    call ExitProcess
-
-This calls the Windows API function ExitProcess. Its first argument is the
-process exit status, which is 42. ExitProcess terminates the process and
-does not return, so this program does not need to restore RSP or execute a
-RET instruction afterward.
-
-    end
-
-This marks the end of the MASM source file. The linker command explicitly
-specifies the entry point with /entry:main, so the source uses plain "end".
-
-
-The entry point and filenames
------------------------------
-
-The entry point is a symbol selected by the linker. It does not have to
-match the source filename, object filename, or executable filename.
-
-For example, this procedure:
-
-    start proc
-        sub rsp, 28h
-        mov ecx, 42
-        call ExitProcess
-    start endp
-
-could be linked with:
-
-    link /subsystem:console /entry:start start.obj kernel32.lib /out:start.exe
-
-The source file, object file, entry symbol, and executable can all have
-different names. With option casemap:none, use the exact same spelling for
-the procedure and /entry symbol.
-
-
-Stack frames and MASM
----------------------
-
-For a detailed explanation of stack alignment and the Windows x64 calling
-convention, see:
-
-  * lessons/concepts/windows-x64-calling-convention.txt
-  * lessons/concepts/stack-alignment.txt
-
-MASM does not require the traditional frame-pointer sequence. The processor
-also does not require it. A classic frame looks like this:
-
-    push rbp
-    mov  rbp, rsp
-    sub  rsp, 20h
-
-and is unwound with:
-
-    add  rsp, 20h
-    pop  rbp
-    ret
-
-On x86-64, a procedure can omit RBP and use RSP directly. The first program
-has no local variables and calls a function that never returns, so it only
-reserves shadow space plus alignment padding:
-
-    sub rsp, 28h
-
-Do not read 28h as "the fifth argument" or as a frame-pointer operation. It
-is the total number of bytes subtracted from RSP before the ExitProcess call.
-The stack grows toward lower addresses when space is allocated, but after the
-subtraction, [rsp+00h] is the low-address end of this reserved region and
-positive offsets refer to higher addresses.
-
-There are two stack-pointer viewpoints to keep separate:
-
-  * The caller's RSP is used to prepare arguments immediately before CALL.
-  * CALL pushes an 8-byte return address and the callee sees a new RSP that
-    is 8 bytes lower. Its offsets are therefore different.
-
-The 28h value above is chosen for this call site. For a normal procedure
-entered by CALL, the caller's return address is already on the stack when the
-callee starts. For the process entry point selected by /entry:main, Windows
-starts execution there rather than executing a source-level CALL to main.
-Do not invent a return address when reasoning about the raw process entry
-point; reason from the actual call-site alignment and allocation.
-
-For a normal leaf procedure that neither calls another function nor needs
-stack storage, no stack frame is needed. For example, this adds two
-arguments and returns the result:
-
-    add_two proc
-        mov eax, ecx
-        add eax, edx
-        ret
-    add_two endp
-
-Here ECX and EDX contain the first two integer arguments, and EAX contains
-the return value. Later lessons will cover ordinary non-leaf procedures,
-local variables, callee-saved registers, and Windows unwind metadata.
-
-
-Exercises
----------
-
-1. Change 42 to 0, build the program, and observe the exit status.
-2. Change 42 to 1 and then to 1234.
-3. Replace "mov ecx, 42" with:
-
-       xor ecx, ecx
-       inc ecx
-
-   Build and run it. What status does it produce?
-4. Explain why this also passes 42:
-
-       mov rax, 42
-       mov ecx, eax
-
-5. Rename the procedure from main to start and change the linker option to
-   /entry:start. Keep the source and executable filenames unchanged.
-
-
-Important distinction
----------------------
-
-The CRT is not being used. ExitProcess is a documented Windows API function,
-and kernel32.lib is an import library used by the linker to connect the
-executable to that API. Calling a Windows API is different from calling a
-C-runtime function such as printf or exit.
-
+    ..\..\glossary.txt
+    ..\concepts\windows-x64-calling-convention.txt
+    ..\concepts\stack-alignment.txt
+    https://learn.microsoft.com/en-us/cpp/build/reference/entry-entry-point-symbol
+    https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-exitprocess

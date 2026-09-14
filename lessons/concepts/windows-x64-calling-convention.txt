@@ -1,183 +1,127 @@
-﻿WINDOWS x64 CALLING CONVENTION
-==============================
+WINDOWS x64 CALLING CONVENTION
+=============================
 
-This is a reference for the Microsoft x64 calling convention used throughout
-these lessons. Understanding this convention is essential for writing correct
-CRT-free assembly on Windows.
+Scope: the standard Windows x64 ABI, with integer and pointer parameters.
+These rules apply to our procedures and Windows API calls alike. They are
+software contracts, not extra behavior performed by the CALL instruction.
 
-Overview
---------
+ARGUMENTS AND RETURN VALUES
+--------------------------
 
-The Windows x64 calling convention (also called the Microsoft x64 ABI) defines:
+For the integer/pointer signatures used in these lessons:
 
-  * Which registers receive arguments
-  * How stack arguments are passed
-  * How return values are received
-  * Which registers the caller and callee must preserve
-  * Stack alignment requirements
-  * The layout of the stack frame at entry and exit
+    Argument position    Location before CALL
+    1                    RCX
+    2                    RDX
+    3                    R8
+    4                    R9
+    5                    [rsp+20h]
+    6                    [rsp+28h]
+    7                    [rsp+30h]
 
-Register Arguments
-------------------
+Use the width of the parameter type: a DWORD uses ECX/EDX/R8D/R9D; a pointer
+or HANDLE uses the full 64-bit register. A stack parameter slot is eight
+bytes; not every parameter's value requires all eight bytes.
 
-The first four integer or pointer arguments are passed in registers, from left
-to right:
+Scalar integer/pointer results use RAX, or EAX for a 32-bit result.
+WriteFile returns a 32-bit BOOL in EAX, not a byte count. Its fourth argument
+points to a separate DWORD output variable.
 
-    Argument 1: RCX
-    Argument 2: RDX
-    Argument 3: R8
-    Argument 4: R9
+Floating-point parameters use XMM registers according to argument position;
+scalar floating-point results use XMM0. Variadic functions, aggregates, and
+vector calling conventions require additional rules outside these lessons.
 
-Writing to a 32-bit register (ECX, EDX, R8D, R9D) automatically clears the
-upper 64-bit register. Use the width matching the parameter type.
+SHADOW SPACE AND OWNERSHIP
+-------------------------
 
-Example: A function taking four DWORD arguments receives them in ECX, EDX,
-R8D, and R9D.
+Before CALL, the caller provides at least 20h (32) bytes:
 
-Stack Arguments
----------------
+    [rsp+00h .. rsp+1Fh]  four eight-byte home slots
+    [rsp+20h ..]          fifth and later arguments, if present
 
-Arguments beyond the first four are passed on the stack. These are placed
-after the shadow space (see below).
+The callee owns the home slots for the duration of the call. It may store
+register arguments there or use them as scratch storage. The caller must
+not keep values it needs after the call in these slots.
 
-Example: WriteFile has five arguments:
+The slots are required even for a zero-argument function. They are not
+automatically initialized, and CALL does not copy registers into them.
+The caller supplies them so that every callee has the same known layout.
 
-    hFile                    RCX
-    lpBuffer                 RDX
-    nNumberOfBytesToWrite    R8D
-    lpNumberOfBytesWritten   R9
-    lpOverlapped              [caller RSP + 20h]
+Reserve enough outgoing space for the largest call in a fixed-size frame.
+Reuse it for successive calls; do not reserve another 32 bytes after every
+return. Extra stack arguments follow the home slots in increasing argument
+order. Their final locations matter, not the order of the MOV instructions
+that fill them. Do not insert padding between these argument slots.
 
-From the caller's perspective before CALL, the fifth argument is at [rsp+20h]
-because the first 20h (32) bytes are reserved for shadow space.
+PRESERVING REGISTERS
+-------------------
 
-After CALL pushes the return address, the callee sees the same argument at
-[rsp+28h].
+    Volatile integer registers:     RAX, RCX, RDX, R8-R11
+    Nonvolatile integer registers:  RBX, RBP, RSI, RDI, R12-R15, RSP
 
-Shadow Space
-------------
+"Volatile" means a callee is allowed to change the value, not that every
+callee necessarily will. If a value must survive a call, keep it in your
+own local storage or in a nonvolatile register whose incoming value you
+preserve. MOV RCX, RAX does not preserve a handle across another call:
+both registers are volatile.
 
-The caller must reserve 32 bytes (20h) of shadow space before every call, even
-if the called function has only one argument or uses no stack arguments at all.
+A returning callee saves/restores only the nonvolatile registers it changes.
+It must undo its own stack allocation and saves before RET. RET then removes
+the return address; the caller remains responsible for its own allocation.
+Neither party deallocates the other's frame.
 
-This is the Windows x64 ABI's guarantee to the callee: there are always four
-8-byte home slots for the first four arguments, immediately following the
-return address.
+For SIMD registers, XMM0-XMM5 are volatile and the low 128 bits of XMM6-XMM15
+are nonvolatile. Wider vector state has additional rules; see the source
+reference rather than extending the integer rules by analogy.
 
-From the caller before CALL:
+CALL, RETURN, AND ALIGNMENT
+--------------------------
 
-    [rsp+00h .. rsp+07h]  home slot 1
-    [rsp+08h .. rsp+0Fh]  home slot 2
-    [rsp+10h .. rsp+17h]  home slot 3
-    [rsp+18h .. rsp+1Fh]  home slot 4
-    [rsp+20h ..]          fifth and later stack arguments
+At a normal call site, RSP must be a multiple of 16. CALL pushes an eight-byte
+return address, so the callee's entry RSP is 8 modulo 16. This also describes
+the Windows x64 executable entry point used in these lessons.
 
-The callee may use these slots to save register arguments if it needs
-stack-addressable copies. It is not required to; the space simply must exist.
+After a frame-function prologue, keep RSP aligned and fixed in the body.
+Our simple unwind-leaf procedures change neither RSP nor nonvolatile
+registers and may run with the entry alignment.
 
-Return Values
--------------
+The CPU does not reserve shadow space or choose padding. See
+stack-alignment.txt for the calculation, including PUSH instructions.
 
-Integer and pointer return values are placed in:
-
-    RAX / EAX   primary return value (64 bits or 32 bits)
-
-Floating-point return values use XMM0 and XMM1 (not covered in this course).
-
-Volatile and Nonvolatile Registers
------------------------------------
-
-Volatile registers (caller-saved):
-    RAX, RCX, RDX, R8, R9, R10, R11
-
-The callee may modify these without preserving them. If the caller needs their
-values after a call, it must save them first.
-
-Nonvolatile registers (callee-saved):
-    RBX, RBP, RSI, RDI, RSP, R12-R15
-
-The callee must preserve these if it uses them. It may do so by saving and
-restoring them in the prologue and epilogue.
-
-Stack Alignment
----------------
-
-The stack must be 16-byte aligned at every CALL instruction. Due to CALL
-pushing an 8-byte return address, the procedure begins with RSP 8 bytes off a
-16-byte boundary.
-
-A normally called procedure enters with:
-
-    RSP mod 16 = 8
-
-To satisfy the alignment requirement at the next call within the procedure,
-reserve an amount that changes the alignment from (RSP mod 16 = 8) to
-(RSP mod 16 = 0).
-
-Example: If RSP = 1008h (which is 8 mod 16):
-
-    sub rsp, 30h → RSP = 0FD8h (still 8 mod 16, not aligned)
-    sub rsp, 38h → RSP = 0FD0h (0 mod 16, aligned)
-
-The additional 8 bytes beyond the minimum storage requirement are alignment
-padding, not local variables or arguments.
-
-Calling Sequence
-----------------
-
-Caller's responsibility:
-
-    1. Place first four arguments in RCX, RDX, R8, R9
-    2. Place remaining arguments on the stack in left-to-right order
-    3. Reserve 32 bytes of shadow space plus any stack arguments
-    4. Reserve additional space for caller's locals or temporary workspace
-    5. Ensure RSP is 16-byte aligned before CALL
-    6. Execute CALL
-    7. After return, restore RSP and any volatile registers
-
-Callee's responsibility:
-
-    1. Save nonvolatile registers if used
-    2. Reserve space for local variables if needed
-    3. Execute the function body
-    4. Place return value in RAX (or XMM0 for floats)
-    5. Restore nonvolatile registers
-    6. Execute RET
-
-The callee does not restore RSP; that is the caller's responsibility.
-
-Common Pattern in These Lessons
+PROLOGUES AND UNWIND INFORMATION
 -------------------------------
 
-Our lessons use this pattern:
+A fixed-frame example with one saved register and no stack arguments:
 
-    proc_name proc
-        ; Reserve space for shadow space, stack arguments, and locals
-        sub rsp, frame_size
+    example proc frame
+        push rbx
+        .pushreg rbx
+        sub rsp, 20h
+        .allocstack 20h
+        .endprolog
 
-        ; Set up arguments for the first call
-        mov ecx, arg1
-        mov edx, arg2_address
-        mov r8d, arg3
-        lea r9, [rsp+local_offset]
-        mov qword ptr [rsp+20h], arg5
+        ; Body: outgoing shadow space is [rsp+00h .. rsp+1Fh].
+        ; Calls may use RBX without changing our saved incoming value.
 
-        call SomeAPI
-
-        ; Set up arguments for the second call
-        mov ecx, next_arg1
-        call AnotherAPI
-
-        ; Return or exit
+        add rsp, 20h
+        pop rbx
         ret
-    proc_name endp
+    example endp
 
-This pattern avoids frame pointers (RBP) and uses only RSP-based addressing
-because our stack layouts are fixed and simple.
+PROC FRAME and the dot-directives produce unwind metadata for Windows and
+debuggers; they do not execute instructions or allocate more memory.
+The annotations must match the actual PUSH and SUB operations. An unwind
+leaf such as Lesson 3's string_length needs no such annotations.
 
-See Also
---------
+RBP is not required for these fixed-size frames. Saving via MOV into frame
+slots is also possible; PUSH-first is a convenient teaching pattern, not
+the only ABI-conforming layout.
 
-lessons/concepts/stack-alignment.txt
-lessons/concepts/caller-vs-callee-rsp.txt
+REFERENCES
+----------
 
+stack-alignment.txt
+caller-vs-callee-rsp.txt
+https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention
+https://learn.microsoft.com/en-us/cpp/build/stack-usage
+https://learn.microsoft.com/en-us/cpp/assembler/masm/proc

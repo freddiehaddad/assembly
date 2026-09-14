@@ -1,81 +1,66 @@
-﻿EXERCISES
-=========
+LESSON 3: EXERCISES
+==================
 
-Tier 1: Verification
+TIER 1: OBSERVE (CORE)
 ---------------------
 
-These exercises confirm you can build and run the program.
+1. Build and run the original program. Expected status: 26, including CRLF.
 
-1. Change the message text to "Hi". Rebuild and run.
-   Verify the exit status is now 2 (the length without the null terminator).
+2. Replace the ENTIRE message declaration for each test, keeping the EQU
+   expression and the procedure unchanged:
 
-2. Add more characters to the message: "Hello, Assembly!". Rebuild and run.
-   Verify the exit status matches the string length (excluding newlines and null).
+       Declaration                  Expected status
+       message db 0                 0
+       message db "Hi", 0           2
+       message db "Hi", 13, 10, 0   4
+       message db "ABC", 0          3
 
-3. Remove the 13, 10 (CR LF) from the message.
-   Does the exit status change? Why or why not?
+   The status tests string_length, not WriteFile success. A zero-length
+   write has device-dependent behavior and is not an I/O test here.
 
-
-Tier 2: Understanding
+TIER 2: EXPLAIN (CORE)
 ---------------------
 
-These exercises test deeper comprehension.
+3. Trace "ABC",13,10,0 by hand. Use the invariant in lesson.txt and show
+   the final iteration. Explain why moving INC before the zero check
+   would break the count for an empty string.
 
-4. Before you change anything, trace through string_length by hand:
-   message = "ABC", 13, 10, 0
-   
-   Draw the memory layout, then trace each iteration of the loop.
-   Predict the final RAX value.
-   Verify your prediction.
+4. Use "message db 'AB',0,'CD',0". Predict both message_length and the
+   return from string_length. Expect 5 and 2 respectively.
+   The executable's status checks the runtime count; EQU can be checked
+   directly in the source or an assembler listing.
 
-5. Explain the difference between:
-   message_length equ $ - message - 1
-   
-   and the result of calling string_length at runtime.
-   
-   Why are they the same? When might they be different?
-   (Hint: think about dynamically-created strings.)
+5. Add "name_text db 'Alice',0". Have main call string_length on that
+   string and exit with its result. Expected status: 5. The same procedure
+   must work without referring to the name of either data label.
 
-6. Create a second string and call string_length on it.
-   Exit with the length of the second string.
-   Example:
-     name db "Alice", 0
-     Call string_length(name) and exit with that result.
+6. Explain why RAX need not be saved by string_length. What would change
+   if its implementation used RBX as a scratch register? Do not implement
+   that change until you have studied the prologue in Lesson 4.
 
-7. Research what registers are volatile (caller-saved) and nonvolatile
-   (callee-saved) in the Windows x64 ABI.
-   
-   Why does string_length not need to preserve RCX or RAX?
+TIER 3: APPLY (OPTIONAL)
+-----------------------
 
+7. Implement count_char:
 
-Tier 3: Extension
------------------
+       RCX = valid null-terminated byte string
+       EDX = ASCII byte value to count (second argument; use DL to compare)
+       RAX = number of matches BEFORE the terminator
 
-These exercises challenge you to apply the lesson to new problems.
+   Use only volatile registers and no nested calls. Tests:
+       "banana",0 with 'a' -> 3
+       "banana",0 with 'x' -> 0
+       0 with 'a'          -> 0
 
-8. Modify string_length to count only alphabetic characters (A-Z, a-z).
-   Call it with the message and exit with the count.
-   
-   Example: "Hello123World" → 10 (the letters only)
-   
-   Challenge: Learn how to use the CMP instruction to test character ranges.
+8. Implement bounded_length:
 
-9. Write a procedure named "count_char" that takes two arguments:
-   - RCX: address of a null-terminated string
-   - R8D: a character code to search for (e.g., 'a' = 0x61)
-   
-   The procedure returns in RAX the number of times that character appears
-   in the string.
-   
-   Test it: count 'a' in "banana" → should be 3.
+       RCX = buffer readable for RDX bytes
+       RDX = maximum number of bytes to examine
+       RAX = index of the first zero, or RDX if no zero occurs in that range
 
-10. Write a procedure named "string_copy" that takes two arguments:
-    - RCX: source address (null-terminated string)
-    - RDX: destination address (writable buffer)
-    
-    The procedure copies the string (including the null terminator) to the
-    destination, then returns the number of bytes copied in RAX.
-    
-    Verify with a known source and inspect the destination memory afterward.
-    Challenge: Ensure the destination is a valid stack-allocated buffer.
+   Check the bound BEFORE reading a byte. RDX = 0 must make no memory access.
+   CMP and JE suffice when your index starts at zero and advances by one.
+   Tests: "ABC",0 with limits 0, 2, 4 -> results 0, 2, 3.
+   Explain why a result equal to the limit does not prove termination.
 
+Keep variants separate or restore the original message when finished.

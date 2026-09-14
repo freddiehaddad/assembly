@@ -34,7 +34,7 @@ length_done:
 	ret
 string_length endp
 
-main proc
+main proc frame
 	; Caller-side layout after SUB:
 	;   [rsp+00h..rsp+1Fh]  20h shadow space
 	;   [rsp+20h..rsp+27h]  08h fifth argument
@@ -43,6 +43,8 @@ main proc
 	; RSP points at the low-address end; positive offsets move upward.
 	; 30h is storage; the extra 08h makes the call-site RSP aligned.
 	sub rsp, 38h
+	.allocstack 38h
+	.endprolog
 
 	; GetStdHandle(STD_OUTPUT_HANDLE)
 	mov ecx, STD_OUTPUT_HANDLE

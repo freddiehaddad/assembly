@@ -1,196 +1,90 @@
-﻿STACK ALIGNMENT
-===============
+STACK ALIGNMENT AND FRAME PLANNING
+=================================
 
-A common source of confusion in Windows x64 assembly. This document explains
-what stack alignment means, why it matters, and how to calculate it.
+Scope: fixed-size Windows x64 frames using eight-byte register PUSHes.
+Large allocations, dynamic allocation, and their stack probes are later
+topics. A source comment or a small sketch is enough for these frames.
 
-The Rule
---------
+START WITH TWO DIFFERENT RSP VALUES
+----------------------------------
 
-The stack must be 16-byte aligned at every CALL instruction.
+    Caller immediately before CALL:  RSP = 1010h (multiple of 16)
+    Callee immediately after CALL:   RSP = 1008h (8 modulo 16)
 
-In other words:
+CALL subtracts eight and writes the return address at the new [rsp].
+That address occupies [rsp] through [rsp+7]. It is already on the stack;
+do not allocate it again when computing SUB RSP.
 
-    (RSP mod 16) = 0 immediately before CALL
+The Windows x64 executable entry point follows the same entry convention.
+The absolute address varies; the alignment contract does not.
 
-A 16-byte alignment means RSP is a multiple of 16. Hexadecimal addresses
-ending in 0 are multiples of 16:
+RESERVING MEMORY DOES NOT INITIALIZE IT
+--------------------------------------
 
-    0FD0h mod 10h = 0  ✓ aligned
-    0FD8h mod 10h = 8  ✗ not aligned
-    1000h mod 10h = 0  ✓ aligned
+SUB RSP, N reserves N bytes below the old RSP. New RSP points at the
+lowest-addressed byte of that reservation. Positive offsets refer to higher
+addresses. There need not be a pushed value or initialized local at [rsp].
 
-Why It Matters
+Windows has no red zone for temporary storage below RSP. Reserve space
+before writing it. ADD RSP, N releases it; it does not erase the bytes.
+
+THE PLANNING METHOD
+-------------------
+
+1. Write the procedure's input, output, and preservation contract.
+2. List values that must survive calls; choose registers or local slots.
+3. Count saved-register PUSH bytes as P (eight times the register count).
+4. Calculate storage S for the outgoing call area and locals:
+       20h shadow space if making calls
+       8 bytes for each argument beyond the fourth in the largest call
+       local variables, including any gaps for their own alignment
+5. Choose the smallest allocation N >= S such that:
+
+       (P + N) modulo 16 = 8
+
+   Equivalently, (8 - P - N) modulo 16 = 0 at a call site.
+   Padding = N - S. The entry return address is not part of P or N.
+
+6. Draw offsets from RSP AFTER the PUSHes and SUB. Keep RSP fixed in the
+   body, set up each call in the same outgoing area, and reverse your
+   prologue at every returning exit.
+
+For arbitrary S, padding is the nonnegative remainder of (8 - P - S)
+divided by 16. Do not use an "even versus odd" shortcut.
+
+SMALL EXAMPLES
 --------------
 
-Certain instructions, particularly SSE instructions like movdqa, require 16-byte
-aligned addresses. More importantly, the Windows x64 ABI defines the calling
-convention assuming 16-byte alignment at call boundaries. Violating this can
-cause crashes, incorrect behavior, or incompatibility with exception handling
-and debugging.
+    Saved registers   P     Storage S                         N     Padding
+    0                 00h   20h shadow                        28h   08h
+    1                 08h   20h shadow                        20h   00h
+    2                 10h   20h shadow                        28h   08h
+    0                 00h   20h shadow + 8-byte arg 5          28h   00h
+    0                 00h   20h shadow + arg 5 + 8-byte local  38h   08h
+    1                 08h   20h shadow + arg 5 + two DWORDs    30h   00h
 
-The Entry State
----------------
+One PUSH toggles the alignment by eight; two PUSHes restore the original
+remainder. PUSH alone does not provide the outgoing shadow space.
 
-When a procedure is entered via CALL from a normally called function:
+A DWORD local requires four bytes, not a mandatory eight-byte slot.
+Lessons 2-3 use an eight-byte slot for clarity. If the storage is instead
+2Ch bytes with no PUSHes, N is still 38h: the padding is 0Ch bytes.
 
-    1. The caller executes CALL, which pushes an 8-byte return address.
-    2. Control transfers to the callee.
-    3. The callee's RSP is now 8 bytes lower than the caller's pre-CALL RSP.
-    4. Therefore: (callee RSP mod 16) = 8
+LAYOUT RULES VERSUS CHOICES
+--------------------------
 
-The callee starts with RSP 8 bytes off a 16-byte boundary.
+The ABI fixes the outgoing shadow and stack-argument locations at calls.
+Local/saved-register placement and unused padding are design choices,
+subject to alignment and unwind rules. Padding is not required to sit next
+to a return address. Nor do all procedures need a frame or a saved RBP.
 
-Example:
+Do not PUSH registers halfway through a fixed-frame body and keep using
+old offsets. Either include saves in the prologue or redesign the layout
+and account for the new RSP at every access and call.
 
-    caller RSP before CALL: 1008h (8 mod 16)
-    CALL pushes return address
-    callee RSP after entry:  1000h (0 mod 16)
+REFERENCES
+----------
 
-Wait—that looks backwards. Let me recalculate:
-
-    caller RSP before CALL: 1008h
-    CALL subtracts 8 (pushes return address): 1000h
-    
-    1000h mod 10h = 0 (aligned)
-
-Actually, if the caller's pre-CALL RSP is 1008h, then after CALL, the callee
-has RSP = 1000h, which is aligned. But the rule says the caller must ensure
-alignment before CALL, so the caller's 1008h seems wrong...
-
-The correct understanding:
-
-The process entry point or a raw CALL from OS/runtime starts with some RSP
-value. Typically, this is **8 bytes off** a 16-byte boundary (0x8 mod 0x10).
-
-A procedure that is called normally (via source-level CALL) expects to see RSP
-8 bytes off alignment at entry.
-
-To satisfy call-site alignment (RSP = 0 mod 16 at the next CALL), a called
-procedure must allocate (reserve via SUB) an amount that is 8 mod 16.
-
-Concrete Example
-----------------
-
-Suppose we are in a procedure. Entry RSP is 1008h (8 mod 16).
-
-We need to call two functions. We reserve stack space:
-
-    sub rsp, 38h
-
-New RSP:
-
-    1008h - 38h = 0FD0h
-    0FD0h mod 10h = 0  ✓ aligned
-
-When we execute CALL:
-
-    CALL pushes 8-byte return address
-    Callee RSP becomes 0FD0h - 8 = 0FC8h
-    0FC8h mod 10h = 8  (8 bytes off; callee sees 8 mod 16)
-
-So the callee can use the standard entry assumption and may call other
-procedures if it allocates correctly.
-
-Why 38h?
---------
-
-Let's say we need:
-
-    20h shadow space
-    08h fifth argument
-    08h local variable
-    ----
-    30h total storage
-
-But 30h is even, so subtracting it from an entry RSP of (8 mod 16) leaves
-RSP still at (8 mod 16):
-
-    1008h - 30h = 0FD8h
-    0FD8h mod 10h = 8  ✗ still not aligned for the next call
-
-We add 8 more bytes:
-
-    1008h - 38h = 0FD0h
-    0FD0h mod 10h = 0  ✓ aligned
-
-The extra 8 bytes are padding. They are not storage for data; they exist to
-correct the alignment.
-
-Calculating Alignment
----------------------
-
-Given:
-
-    entry RSP = some value with (entry RSP mod 16) = 8
-    required storage = S bytes
-    required alignment at call site = (call RSP mod 16) = 0
-
-Algorithm:
-
-    1. Calculate total = S
-    2. If (total mod 16) != 8, add padding until (total mod 16) = 8
-    3. Reserve total bytes via SUB
-
-Example 1: S = 30h (48 decimal)
-
-    30h mod 10h = 0
-    We need (total mod 16) = 8
-    30h + 08h = 38h
-    38h mod 10h = 8  ✓
-    Reserve 38h
-
-Example 2: S = 28h (40 decimal)
-
-    28h mod 10h = 8
-    We need (total mod 16) = 8
-    28h already satisfies the condition
-    Reserve 28h
-
-The General Rule
-----------------
-
-If entry RSP has (RSP mod 16) = 8, then to align for the next call:
-
-    total_allocation mod 16 must equal 8
-
-If entry RSP has (RSP mod 16) = 0 (raw process entry point), then:
-
-    total_allocation mod 16 must equal 0
-
-For most procedures in this course, entry is normally (RSP mod 16) = 8, so:
-
-    required storage = S
-    padding = (16 - ((S mod 16))) mod 16
-    if S mod 16 != 8, padding = 8; else padding = 0
-    total allocation = S + padding
-
-Simpler: if S is even, add 8; if S is odd, add 7 (usually).
-
-Actually, simplest: calculate storage, then try values (30h, 38h, 40h, 48h...)
-until (value mod 16) = 8. This is what we do in the lessons.
-
-Common Errors
--------------
-
-Error 1: Forgetting alignment entirely
-    sub rsp, 20h       ; only shadow space
-    call SomeAPI       ; RSP is (8 mod 16) before call, not (0 mod 16)
-
-Error 2: Calculating alignment as a multiple of 16, not 8 mod 16
-    sub rsp, 30h       ; 30h is a multiple of 16, but 30h mod 16 = 0, not 8
-
-Error 3: Not accounting for CALL pushing a return address
-    entry RSP = 1000h (0 mod 16)
-    sub rsp, 28h
-    call func          ; new RSP = 0FD8h (8 mod 16), not aligned!
-
-The lesson: **alignment is about what RSP mod 16 is immediately before CALL**,
-not about general stack "alignment" in abstract terms.
-
-See Also
---------
-
-lessons/concepts/caller-vs-callee-rsp.txt
-lessons/concepts/windows-x64-calling-convention.txt
-
+windows-x64-calling-convention.txt
+caller-vs-callee-rsp.txt
+https://learn.microsoft.com/en-us/cpp/build/stack-usage

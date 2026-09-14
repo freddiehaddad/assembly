@@ -1,59 +1,43 @@
-﻿EXERCISES
-=========
+LESSON 1: EXERCISES
+==================
 
-Tier 1: Verification
+TIER 1: OBSERVE (CORE)
 ---------------------
 
-These exercises confirm you can build and run the program.
+1. Build exit.asm using lesson.txt. Run it, then read $LASTEXITCODE.
+   Expected: no program text, status 42.
 
-1. Change the exit status from 42 to 0. Rebuild and verify the exit status.
+2. Change the status to 0, then 1234. Rebuild for each change.
+   Expected: exactly the chosen status in both cases. Windows process
+   status is 32 bits; it is not limited to the Unix shell's usual 0-255 range.
 
-2. Change the exit status to 255. What do you observe? Why?
-   (Hint: consider that exit codes are typically unsigned 8-bit values on Unix,
-    but can be larger on Windows.)
-
-3. Change the exit status to 1, then to 7. Verify each builds and runs.
-
-
-Tier 2: Understanding
+TIER 2: EXPLAIN (CORE)
 ---------------------
 
-These exercises test deeper comprehension.
+3. Predict the status after replacing MOV ECX,42 with:
 
-4. Before you change anything, predict what will happen:
-   Replace "mov ecx, 42" with:
        xor ecx, ecx
        inc ecx
-   
-   Will this produce the same exit status? Verify your prediction.
-   Explain why (or why not).
 
-5. Read the Windows documentation for ExitProcess:
-   https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-exitprocess
-   
-   What is the parameter? What type is it? Why can you pass any value?
+   Run it and reconcile the result with your prediction.
 
-6. Explain why the stack must be 16-byte aligned before a CALL instruction.
-   (Hint: see lessons/concepts/stack-alignment.txt if unsure.)
+4. With entry RSP = 1008h, calculate RSP after subtracting 20h and 28h.
+   For each, check storage capacity AND alignment. Do this on paper;
+   a misaligned program happening to run would not prove ABI correctness.
 
+5. Explain why .ALLOCSTACK does not allocate memory a second time.
+   Why is there no ADD RSP or RET after ExitProcess?
 
-Tier 3: Extension
------------------
+TIER 3: APPLY (OPTIONAL)
+-----------------------
 
-These exercises challenge you to apply the lesson to new problems.
+6. Rename main to start, keeping the filename exit.asm. Assemble normally,
+   then use the manual link command from ..\..\README.md with /entry:start.
+   Expected: the same status and behavior as before.
 
-7. Write a second procedure named "double_and_exit" that takes one argument in RCX,
-   multiplies it by 2, and passes the result to ExitProcess.
-   
-   Call it from main with the value 21. Verify the exit status is 42.
+7. Pass 42 by first loading EAX, then copying EAX to ECX. Explain which
+   register is required by the API and which is merely your temporary.
 
-8. Modify the program to call ExitProcess twice, with different exit codes.
-   (Hint: ExitProcess does not return, so you will not reach the second call.
-    This is a "gotcha" exercise; explain why.)
-
-9. Write a procedure named "check_range" that receives one value in RCX.
-   If the value is between 0 and 10 (inclusive), call ExitProcess(0).
-   Otherwise, call ExitProcess(1).
-   
-   Test it with values 0, 5, 10, and 11 by calling it from main with each value.
-
+Keep a short record of predictions and results in your own notes. Restore
+the worked example's status to 42 when you finish, or keep variations in a
+separate source file selected explicitly with build.ps1 -Source.

@@ -1,121 +1,145 @@
-﻿ASSEMBLY GLOSSARY
-=================
+ASSEMBLY AND SYSTEMS GLOSSARY
+============================
 
-A reference for terms used in these lessons.
+Use this as a lookup reference, not a vocabulary list to memorize.
+
+ABI (APPLICATION BINARY INTERFACE)
+  Rules that let separately built machine-code components work together,
+  including calling conventions, type layout, and executable interfaces.
+
+ADDRESS / POINTER
+  An address identifies a byte in a process's virtual address space. A
+  pointer is a value used as an address. The pointers in these lessons are
+  64 bits; the objects they point to need not be 64 bits.
+
+ALIGNMENT
+  An address is aligned to N bytes when it is divisible by N. For example,
+  1000h is 16-byte aligned; 1008h is not. Alignment is not the same as size.
+
+ASSEMBLER / DIRECTIVE
+  The assembler translates source into object code. A directive controls
+  that translation or declares data; it is not a CPU instruction. Examples:
+  EQU defines a constant; DB emits bytes; .ALLOCSTACK describes unwind data.
+
+BYTE / WORD / DWORD / QWORD
+  In MASM: 8, 16, 32, and 64 bits respectively. A byte has its own address.
+  A multi-byte object starts at its lowest-addressed byte.
+
+CALLEE / CALLER
+  The callee is the procedure being called; the caller makes the call.
+  A procedure can be a callee of one function and a caller of another.
 
 CALLING CONVENTION
-  A set of rules defining how procedures receive arguments, return values,
-  preserve registers, and align the stack. Windows x64 is the convention
-  used in this course.
+  Rules for arguments, return values, preserved registers, and stack use.
+  These lessons use the standard Windows x64 convention.
 
-CALLEE
-  A procedure being called. It receives arguments, executes, and returns a value.
-  The callee's RSP is 8 bytes lower than the caller's pre-CALL RSP.
+DISPLACEMENT / OFFSET
+  A displacement is a constant added in an address expression, such as 20h
+  in [rsp+20h]. An offset is a distance from a stated reference address;
+  changing the reference changes the offset, not the object's address.
 
-CALLER
-  A procedure making a call to another procedure. The caller sets up arguments,
-  executes CALL, and resumes after the callee returns.
+ENTRY POINT
+  The address in an executable where Windows startup transfers control.
+  /entry:main selects our main symbol; the name alone has no special effect.
 
-DISPLACEMENT (or OFFSET)
-  A constant added to a base address. In [rsp+20h], the 20h is the displacement.
-
-IMMEDIATE
-  A constant value encoded in the instruction. In "mov ecx, 42", the 42 is
-  an immediate.
-
-OPERAND
-  A value or location operated on by an instruction. In "mov ecx, 42", both
-  ecx and 42 are operands.
-
-REGISTER
-  A named storage location inside the CPU (e.g., RAX, RBP). Used for fast
-  access to values during computation.
-
-SHADOW SPACE (or HOME SPACE)
-  32 bytes (4 slots × 8 bytes) reserved by the caller for the callee's first
-  four register-passed arguments. See lessons/concepts/windows-x64-calling-convention.txt.
-
-STACK
-  Memory region used for temporary storage, local variables, and function
-  parameters. Grows toward lower addresses on x86-64.
-
-STACK POINTER (RSP)
-  A register (RSP) that points to the current top of the stack. Decreases
-  when space is allocated (via SUB), increases when space is freed (via ADD).
-
-VOLATILE REGISTER (or CALLER-SAVED)
-  A register that may be modified by a called procedure. The caller must
-  preserve its value if needed. Examples: RAX, RCX, RDX, R8, R9, R10, R11.
-
-NONVOLATILE REGISTER (or CALLEE-SAVED)
-  A register that must be preserved by a called procedure. If the callee uses
-  it, it must save and restore the original value. Examples: RBX, RSI, RDI,
-  RBP, R12-R15.
-
-NULL-TERMINATED STRING
-  A sequence of bytes followed by a zero byte (0x00). Used in C and assembly
-  to mark the end of a string without storing a separate length.
-
-LEAF PROCEDURE
-  A procedure that does not call any other procedure. Often simpler because it
-  may not need to reserve stack space for called-function arguments.
-
-PROLOGUE
-  Instructions at the start of a procedure to set up the stack frame and save
-  nonvolatile registers.
-
-EPILOGUE
-  Instructions at the end of a procedure to restore the stack frame, restore
-  nonvolatile registers, and return to the caller.
+FLAGS
+  Status bits set by arithmetic and comparisons and tested by conditional
+  branches. CMP sets flags as if subtracting, but does not store the result.
 
 FRAME POINTER
-  A register (often RBP) used as a stable reference point for local variables
-  and parameters. Optional on x86-64; not always used.
+  A register, often RBP, providing a stable reference within a frame.
+  Optional for our fixed-size frames, where RSP stays fixed in the body.
 
-PTRSIZE (or PTR)
-  A MASM qualifier specifying the width of a memory operand.
-  "mov qword ptr [rsp+20h], 0" specifies an 8-byte store.
+HANDLE
+  An opaque Windows value identifying a resource. It is not a pointer to
+  dereference. HANDLE values are pointer-sized on Windows x64.
+
+IMMEDIATE
+  A constant encoded in an instruction: 42 in "mov ecx, 42".
+
+ISA (INSTRUCTION SET ARCHITECTURE)
+  The software-visible CPU model: instructions, registers, addressing,
+  and their effects. MASM and AT&T notation can express the same x86 ISA.
+
+LEAF PROCEDURE
+  Commonly, a procedure that calls no other procedure. A Windows unwind
+  leaf also leaves RSP and other nonvolatile registers unchanged and needs
+  no unwind entry. A call-free procedure that allocates a frame is not such
+  an unwind leaf.
+
+LITTLE-ENDIAN
+  The least significant byte of a multi-byte value is stored at the lowest
+  address. A DWORD 11223344h occupies bytes 44h, 33h, 22h, 11h in address order.
+
+NONVOLATILE / CALLEE-SAVED REGISTER
+  A register whose incoming value a returning callee must preserve.
+  It need only save and restore a register if it changes it. Integer examples:
+  RBX, RBP, RSI, RDI, R12-R15. RSP must also be restored before RET.
+
+NULL / NULL-TERMINATED STRING
+  A null pointer is the pointer value zero. A byte string's null terminator
+  is a zero byte in memory. It is not the printable character '0' (30h).
+  Strings need a representation contract: terminator, explicit length, etc.
+
+OBJECT FILE / LINKER / IMPORT LIBRARY
+  An object file contains code/data, symbols, and relocation information.
+  The linker combines objects and resolves references to build an executable.
+  An import library describes functions provided by a DLL at runtime.
+
+OPERAND
+  An input or destination of an instruction. MASM usually writes destination
+  first. Brackets specify a memory operand; LEA computes the address instead
+  of loading the memory contents.
+
+PADDING
+  Unused bytes in a chosen layout, often inserted to satisfy alignment.
+  There is no CPU instruction that "creates padding"; it is part of the
+  allocation calculation.
+
+PROLOGUE / EPILOGUE
+  Code that establishes a procedure's frame and saves registers / code that
+  reverses those changes before returning. MASM's unwind directives describe
+  the prologue; they do not execute PUSH, SUB, ADD, or POP for you.
+
+PTR
+  MASM's type-override operator. BYTE PTR, DWORD PTR, and QWORD PTR specify
+  operand sizes. "mov qword ptr [rsp+20h], 0" stores eight zero bytes.
+  PTR does not turn the stored value into a pointer.
+
+REGISTER
+  A named CPU storage location. RAX is 64 bits, EAX its low 32 bits, AX its
+  low 16 bits, and AL its low 8 bits. A write to EAX also clears RAX's upper
+  32 bits; writes to AX or AL leave the other bits unchanged.
+
+RETURN ADDRESS
+  For a normal 64-bit near CALL, the address of the following instruction,
+  pushed as eight bytes. RET reads it from [rsp] and advances RSP by eight.
+  It is distinct from the function's return value in RAX.
 
 SECTION
-  A named region in an object file or executable. Common sections: .code
-  (executable), .data (initialized data), .const (read-only data).
+  A region of an object or executable. MASM's .code, .data, and .const
+  directives normally contribute to PE .text, .data, and .rdata sections.
+  .data? declares uninitialized data. Section permissions matter for writes.
 
-ASSEMBLER
-  A tool that translates assembly source code into machine code. In these
-  lessons, ml64.exe is the MASM assembler.
+SHADOW / HOME SPACE
+  Four eight-byte slots supplied by a Windows x64 caller for its callee.
+  They need not contain copies of the argument registers. The callee may
+  overwrite them; the caller cannot keep live values there across that call.
 
-LINKER
-  A tool that combines object files and libraries into an executable.
-  In these lessons, link.exe is the Windows linker.
+SIGN EXTENSION / ZERO EXTENSION
+  Widening a bit pattern by repeating its sign bit / filling with zero bits.
+  MOVSXD RAX, EAX sign-extends 32 bits to 64. Writing EAX zero-extends into
+  RAX. These operations differ for a 32-bit negative signed value.
 
-OBJECT FILE
-  Intermediate file produced by the assembler, containing machine code and
-  references to external symbols. Later linked into an executable.
+STACK / STACK POINTER (RSP)
+  A thread's stack is memory used for calls and temporary storage. RSP points
+  to its current low-address end. PUSH subtracts space then stores; POP reads
+  then adds space. SUB reserves space without initializing it, so [rsp] need
+  not hold the last pushed value after a frame allocation.
 
-SYMBOL
-  A name for a location in code or data (e.g., main, message). Defined in
-  one file and referenced (imported) in another via extern.
+VOLATILE / CALLER-SAVED REGISTER
+  A register a callee may overwrite. If a caller needs its old value after
+  a call, the caller must arrange to preserve it. Integer examples:
+  RAX, RCX, RDX, R8-R11. "Volatile" here is not C's volatile type qualifier.
 
-CALLING A PROCEDURE
-  The CALL instruction:
-    1. Pushes the return address (8 bytes) onto the stack.
-    2. Transfers control to the procedure's first instruction.
-
-RETURNING FROM A PROCEDURE
-  The RET instruction:
-    1. Pops the return address from the stack.
-    2. Jumps to that address (back to the caller).
-
-SIGN EXTENSION
-  When a smaller value is written to a register, filling the upper bits with
-  the sign bit. Writing to ECX (32-bit) clears the upper 32 bits of RCX
-  (because 32-bit values in x64 are zero-extended, not sign-extended).
-
-See Also
---------
-
-lessons/concepts/ — detailed reference documents
-lessons/01-exit/ — Lesson 1: basic concepts
-lessons/02-console-output/ — Lesson 2: API calls and stack
-lessons/03-string-length/ — Lesson 3: procedures and loops
-
+Further reference: lessons\concepts\windows-x64-calling-convention.txt
