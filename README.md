@@ -108,19 +108,36 @@ Each lesson directory contains:
 - **glossary.txt**: Assembly terminology
 - **build.ps1**: Shared build script (works in any lesson directory)
 
-## Building a Lesson
+## Build and run
 
-In any lesson directory:
+Use a Visual Studio developer PowerShell configured for the x64 tools and Windows
+SDK. The script uses that environment; it does not initialize Visual Studio.
 
-```powershell
-.\..\..\build.ps1
-```
-
-Or use the Visual Studio developer shell:
+From a lesson directory:
 
 ```powershell
-ml64 /c /Fo lesson.obj lesson.asm
-link /subsystem:console /entry:main lesson.obj kernel32.lib /out:lesson.exe
-.\lesson.exe
+..\..\build.ps1 -Source exit.asm -NoRun
+.\exit.exe
+$LASTEXITCODE
 ```
+
+Substitute the lesson's source name. `-Source` may be omitted only when the current
+directory contains exactly one `.asm` file. Without `-NoRun`, the script also runs
+the executable and returns its exit status. A deliberate status such as 42 in
+Lesson 1 is not an assembly or link failure.
+
+`-Debug` adds debugger information and builds without running. For a manual build:
+
+```powershell
+ml64 /nologo /c /Fo exit.obj exit.asm
+link /nologo /machine:x64 /subsystem:console /entry:main /nodefaultlib exit.obj kernel32.lib /out:exit.exe
+```
+
+Use the manual linker command when an exercise changes the entry symbol.
+
+## Text-file conventions
+
+`.gitattributes` specifies CRLF working copies; Git may store normalized LF
+internally. `.editorconfig` specifies UTF-8 without a byte-order mark and CRLF
+line endings. Use ASCII characters in lesson text.
 

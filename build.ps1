@@ -1,58 +1,80 @@
-﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-Build an assembly lesson program.
+Assemble and link a single-source Windows x64 lesson program.
 
 .DESCRIPTION
-Assembles a MASM source file and links it into a CRT-free Windows executable.
-Automatically detects the .asm file in the current directory.
+Run in a Visual Studio x64 developer environment. The entry symbol is main.
+Select a source explicitly when the directory contains more than one .asm file.
+By default, also run the program and return its exit status.
 
 .EXAMPLE
-./build.ps1
+..\..\build.ps1 -Source exit.asm -NoRun
+
+.EXAMPLE
+..\..\build.ps1 -Source args.asm -Debug
 #>
 
 param(
-    [switch]$Debug
+    [string]$Source,
+    [switch]$Debug,
+    [switch]$NoRun
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = 'Stop'
 
-# Find the .asm file in the current directory
-$asmFile = Get-ChildItem -Filter *.asm -ErrorAction SilentlyContinue | Select-Object -First 1
-
-if (-not $asmFile) {
-    Write-Error "No .asm file found in the current directory."
-    exit 1
+if ($Source) {
+    $asmFile = Get-Item -LiteralPath $Source
+    if ($asmFile.PSIsContainer -or $asmFile.Extension -ne '.asm') {
+        throw "Source must be an .asm file: $Source"
+    }
+} else {
+    $sources = @(Get-ChildItem -LiteralPath . -Filter '*.asm' -File)
+    if ($sources.Count -eq 0) {
+        throw 'No .asm file found in the current directory.'
+    }
+    if ($sources.Count -ne 1) {
+        throw 'Multiple .asm files found. Select one with -Source filename.asm.'
+    }
+    $asmFile = $sources[0]
 }
 
-$objFile = $asmFile.BaseName + ".obj"
-$exeFile = $asmFile.BaseName + ".exe"
+$assembler = Get-Command ml64.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+$linker = Get-Command link.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+if (-not $assembler -or -not $linker) {
+    throw 'Open a Visual Studio x64 developer PowerShell with ml64.exe and link.exe available.'
+}
 
-Write-Host "Building $($asmFile.Name)..." -ForegroundColor Cyan
+$objFile = [System.IO.Path]::ChangeExtension($asmFile.FullName, '.obj')
+$exeFile = [System.IO.Path]::ChangeExtension($asmFile.FullName, '.exe')
+$asmArguments = @('/nologo', '/c', "/Fo$objFile")
+$linkArguments = @(
+    '/nologo', '/machine:x64', '/subsystem:console', '/entry:main',
+    '/nodefaultlib', '/incremental:no', $objFile, 'kernel32.lib', "/out:$exeFile"
+)
 
-# Assemble
-Write-Host "  Assembling..." -ForegroundColor Gray
-ml64 /c /Fo $objFile $asmFile.Name
+if ($Debug) {
+    $asmArguments += '/Zi'
+    $pdbFile = [System.IO.Path]::ChangeExtension($asmFile.FullName, '.pdb')
+    $linkArguments += @('/debug', "/pdb:$pdbFile")
+}
+
+Write-Host "Assembling $($asmFile.Name)..."
+& $assembler.Path @asmArguments $asmFile.FullName
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "Assembly failed (exit code $LASTEXITCODE)."
-    exit 1
+    throw "Assembly failed (exit code $LASTEXITCODE)."
 }
 
-# Link
-Write-Host "  Linking..." -ForegroundColor Gray
-link /subsystem:console /entry:main $objFile kernel32.lib /out:$exeFile
+Write-Host "Linking $($asmFile.BaseName).exe..."
+& $linker.Path @linkArguments
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "Linking failed (exit code $LASTEXITCODE)."
-    exit 1
+    throw "Link failed (exit code $LASTEXITCODE)."
 }
 
-Write-Host "Build successful: $exeFile" -ForegroundColor Green
-
-# Run
-if (-not $Debug) {
-    Write-Host "Running $exeFile..." -ForegroundColor Gray
-    & "./$exeFile"
-    $exitStatus = $LASTEXITCODE
-    Write-Host "Exit status: $exitStatus" -ForegroundColor Gray
+if ($NoRun -or $Debug) {
+    return
 }
 
+& $exeFile
+$programExitCode = $LASTEXITCODE
+Write-Host "Exit status: $programExitCode"
+exit $programExitCode
