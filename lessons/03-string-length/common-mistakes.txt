@@ -1,37 +1,37 @@
 LESSON 3: COMMON MISTAKES
-=======================
+=========================
 
 1. The result is two larger than expected.
-   CR and LF are nonzero bytes and count toward the length. "Hi",13,10,0
-   has length 4, whereas "Hi",0 has length 2.
+   CR and LF are nonzero bytes and count toward the length. "Hi",13,10,0 has
+   length 4, whereas "Hi",0 has length 2.
 
 2. The result includes the terminator.
-   Check the byte before incrementing the count. Trace the empty string;
-   it must return zero without an increment.
+   Check the byte before incrementing the count. Trace the empty string; it must
+   return zero without an increment.
 
 3. The scan reads past the buffer or faults.
-   The contract requires a readable terminator. Removing it is not a valid
-   test input for this unbounded procedure. Use the bounded extension to
-   explore unterminated buffers safely.
+   The contract requires a readable terminator. Removing it is not a valid test
+   input for this unbounded procedure. Use the bounded extension to explore
+   unterminated buffers safely.
 
 4. The procedure repeatedly examines the same byte.
-   Check initialization, the RCX+RAX address expression, the increment, and
-   the back edge. Write down the next address before stepping.
+   Check initialization, the RCX+RAX address expression, the increment, and the
+   back edge. Write down the next address before stepping.
 
 5. The return value disappears.
-   Another call may overwrite RAX. Use the result immediately or preserve
-   it in suitable storage; do not assume a later API keeps it unchanged.
+   Another call may overwrite RAX. Use the result immediately or preserve it in
+   suitable storage; do not assume a later API keeps it unchanged.
 
 6. count_char reads the wrong character argument.
-   With two integer/pointer arguments, use RCX and RDX, not RCX and R8.
-   For the ASCII comparison, the low byte of EDX is DL.
+   With two integer/pointer arguments, use RCX and RDX, not RCX and R8. For the
+   ASCII comparison, the low byte of EDX is DL.
 
 7. The output's length and the exit status differ.
-   WriteFile uses message_length, while the scan stops at the first zero.
-   An embedded zero or a runtime change can make these lengths differ.
+   WriteFile uses message_length, while the scan stops at the first zero. An
+   embedded zero or a runtime change can make these lengths differ.
 
 8. The assembler cannot infer a memory operand's width.
-   CMP BYTE PTR [rcx+rax],0 specifies a single-byte comparison.
-   Brackets alone do not say whether the object is a byte or a larger value.
+   CMP BYTE PTR [rcx+rax],0 specifies a single-byte comparison. Brackets alone
+   do not say whether the object is a byte or a larger value.
 
 Reference: ..\concepts\windows-x64-calling-convention.txt

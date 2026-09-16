@@ -1,124 +1,123 @@
 LESSON 3: STRING REPRESENTATION AND PROCEDURE CONTRACTS
-=====================================================
+=======================================================
 
-Goal: explain and test string_length in string-length.asm. This is our
-first returning procedure. The output setup reuses Lesson 2.
+Goal: explain and test string_length in string-length.asm. This is our first
+returning procedure. The output setup reuses Lesson 2.
 
 1. A STRING NEEDS A REPRESENTATION
---------------------------------
+----------------------------------
 
-The ISA does not give a byte array an automatic length. Lesson 2 passed a
-length separately. Another representation uses a terminating zero byte:
+The ISA does not give a byte array an automatic length. Lesson 2 passed a length
+separately. Another representation uses a terminating zero byte:
 
     message db "Hello from x64 assembly!", 13, 10, 0
 
 There are 27 stored bytes: 24 text bytes, CR, LF, and the terminator.
-string_length counts all bytes before zero, INCLUDING CR and LF: 26.
-The character '0' is 30h, not a terminator.
+string_length counts all bytes before zero, INCLUDING CR and LF: 26. The
+character '0' is 30h, not a terminator.
 
-This is a byte count, not a general Unicode character count. Use ASCII
-data in these exercises. An embedded zero ends a null-terminated string
-even when more bytes follow it in the array.
+This is a byte count, not a general Unicode character count. Use ASCII data in
+these exercises. An embedded zero ends a null-terminated string even when more
+bytes follow it in the array.
 
 The assembly-time constant:
 
     message_length equ $ - message - 1
 
-counts emitted bytes except the final terminator. A runtime scan can give
-a different result if a zero occurs earlier or the writable data changes.
+counts emitted bytes except the final terminator. A runtime scan can give a
+different result if a zero occurs earlier or the writable data changes.
 
-Checkpoint: lay out "ABC",13,10,0 in address order. How many bytes are
-stored, and how many should string_length return?
+Checkpoint: lay out "ABC",13,10,0 in address order. How many bytes are stored,
+and how many should string_length return?
 
 2. STATE THE CONTRACT BEFORE THE LOOP
-------------------------------------
+-------------------------------------
 
     Input:         RCX points to readable bytes ending in a zero byte.
     Result:        RAX is the number of bytes before that zero.
     Preservation:  Nonvolatile registers and the caller's stack are preserved.
                    Volatile registers and arithmetic flags may change.
 
-There is no bounds check. The caller must supply an accessible terminator.
-A missing terminator can lead to out-of-bounds reads or a fault; it does not
-have a predictable "extra length." Do not test by reading unowned memory.
+There is no bounds check. The caller must supply an accessible terminator. A
+missing terminator can lead to out-of-bounds reads or a fault; it does not have
+a predictable "extra length." Do not test by reading unowned memory.
 
 The normal call is:
 
     lea rcx, message
     call string_length
 
-Our own procedures use the same argument and return convention as APIs.
-CALL pushes a return address; RET uses that address. The returned length
-is a separate value in RAX.
+Our own procedures use the same argument and return convention as APIs. CALL
+pushes a return address; RET uses that address. The returned length is a
+separate value in RAX.
 
 3. TRACE THE LOOP
-----------------
+-----------------
 
 Read the procedure in string-length.asm:
 
-    xor eax, eax               initialize the count to zero
+    xor eax, eax                initialize the count to zero
     cmp byte ptr [rcx+rax], 0   compare the next byte with zero
-    je length_done             leave if it is the terminator
-    inc rax                    count one nonzero byte
-    jmp length_loop            repeat
+    je length_done              leave if it is the terminator
+    inc rax                     count one nonzero byte
+    jmp length_loop             repeat
 
-CMP sets flags as though subtracting, without changing the byte. JE tests
-the zero flag (ZF): equality makes ZF = 1. JMP is unconditional. Keep a
-conditional jump next to the comparison whose flags it is meant to test.
+CMP sets flags as though subtracting, without changing the byte. JE tests the
+zero flag (ZF): equality makes ZF = 1. JMP is unconditional. Keep a conditional
+jump next to the comparison whose flags it is meant to test.
 
 The loop invariant is:
 
-    At length_loop, RAX bytes have been examined and all are nonzero.
-    RCX + RAX points to the next byte to examine.
+    At length_loop, RAX bytes have been examined and all are nonzero. RCX + RAX
+    points to the next byte to examine.
 
-If that byte is zero, RAX is the answer. Otherwise INC restores the
-invariant for the next iteration. This also explains why an empty string
-returns zero and why the terminator is not counted.
+If that byte is zero, RAX is the answer. Otherwise INC restores the invariant
+for the next iteration. This also explains why an empty string returns zero and
+why the terminator is not counted.
 
-Checkpoint: make a table with columns RAX, address examined, byte, and
-branch taken for "ABC",0. Include the final comparison with zero.
+Checkpoint: make a table with columns RAX, address examined, byte, and branch
+taken for "ABC",0. Include the final comparison with zero.
 
 4. REGISTER PRESERVATION IS A CONTRACT
--------------------------------------
+--------------------------------------
 
     Volatile:     RAX, RCX, RDX, R8-R11
     Nonvolatile:  RBX, RBP, RSI, RDI, R12-R15, and RSP
 
-The caller must preserve any volatile value it needs after a call.
-A returning callee must preserve each nonvolatile value it changes.
-Reading a register does not require saving it.
+The caller must preserve any volatile value it needs after a call. A returning
+callee must preserve each nonvolatile value it changes. Reading a register does
+not require saving it.
 
-This string_length only changes RAX and flags. It makes no nested calls,
-does not modify RSP, and does not modify a nonvolatile register. It is a
-leaf procedure requiring no stack frame or unwind entry.
+This string_length only changes RAX and flags. It makes no nested calls, does
+not modify RSP, and does not modify a nonvolatile register. It is a leaf
+procedure requiring no stack frame or unwind entry.
 
-The implementation happens not to change RCX. Unless a procedure's
-documented contract promises otherwise, callers should still treat the
-ABI's volatile registers as clobberable. Lesson 4 teaches how to preserve
-state when a procedure itself makes calls.
+The implementation happens not to change RCX. Unless a procedure's documented
+contract promises otherwise, callers should still treat the ABI's volatile
+registers as clobberable. Lesson 4 teaches how to preserve state when a
+procedure itself makes calls.
 
 5. USING THE RESULT
-------------------
+-------------------
 
-main keeps Lesson 2's 38h frame for its API calls. It prints the message,
-calls string_length, then uses the low 32 bits of the result as the process
-status:
+main keeps Lesson 2's 38h frame for its API calls. It prints the message, calls
+string_length, then uses the low 32 bits of the result as the process status:
 
     mov ecx, eax
     call ExitProcess
 
 This is a convenient observation channel for our small lengths, not a
-replacement for integer formatting. The program does not print "26".
-Its initial WriteFile call still uses the assembly-time length and assumes
-successful output, just as in Lesson 2.
+replacement for integer formatting. The program does not print "26". Its initial
+WriteFile call still uses the assembly-time length and assumes successful
+output, just as in Lesson 2.
 
     ..\..\build.ps1 -Source string-length.asm -NoRun
     .\string-length.exe
     $LASTEXITCODE
 
-Expected: the message and CRLF, then PowerShell displays status 26.
-No new stack calculation is required in main; return to Lesson 2's frame
-map if an offset is unclear.
+Expected: the message and CRLF, then PowerShell displays status 26. No new stack
+calculation is required in main; return to Lesson 2's frame map if an offset is
+unclear.
 
 Continue with exercises.txt. References:
 

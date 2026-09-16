@@ -1,5 +1,5 @@
 LESSON 3: EXERCISES
-==================
+===================
 
 TIER 1: OBSERVE (CORE)
 ---------------------
@@ -15,28 +15,28 @@ TIER 1: OBSERVE (CORE)
        message db "Hi", 13, 10, 0   4
        message db "ABC", 0          3
 
-   The status tests string_length, not WriteFile success. A zero-length
-   write has device-dependent behavior and is not an I/O test here.
+   The status tests string_length, not WriteFile success. A zero-length write
+   has device-dependent behavior and is not an I/O test here.
 
 TIER 2: EXPLAIN (CORE)
----------------------
+----------------------
 
-3. Trace "ABC",13,10,0 by hand. Use the invariant in lesson.txt and show
-   the final iteration. Explain why moving INC before the zero check
-   would break the count for an empty string.
+3. Trace "ABC",13,10,0 by hand. Use the invariant in lesson.txt and show the
+   final iteration. Explain why moving INC before the zero check would break the
+   count for an empty string.
 
-4. Use "message db 'AB',0,'CD',0". Predict both message_length and the
-   return from string_length. Expect 5 and 2 respectively.
-   The executable's status checks the runtime count; EQU can be checked
-   directly in the source or an assembler listing.
+4. Use "message db 'AB',0,'CD',0". Predict both message_length and the return
+   from string_length. Expect 5 and 2 respectively. The executable's status
+   checks the runtime count; EQU can be checked directly in the source or an
+   assembler listing.
 
-5. Add "name_text db 'Alice',0". Have main call string_length on that
-   string and exit with its result. Expected status: 5. The same procedure
-   must work without referring to the name of either data label.
+5. Add "name_text db 'Alice',0". Have main call string_length on that string and
+   exit with its result. Expected status: 5. The same procedure must work
+   without referring to the name of either data label.
 
-6. Explain why RAX need not be saved by string_length. What would change
-   if its implementation used RBX as a scratch register? Do not implement
-   that change until you have studied the prologue in Lesson 4.
+6. Explain why RAX need not be saved by string_length. What would change if its
+   implementation used RBX as a scratch register? Do not implement that change
+   until you have studied the prologue in Lesson 4.
 
 TIER 3: APPLY (OPTIONAL)
 -----------------------

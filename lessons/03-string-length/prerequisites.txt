@@ -1,12 +1,12 @@
 LESSON 3: PREREQUISITES
-======================
+=======================
 
 From Lessons 1-2:
-  [ ] Build and run hello.asm and inspect a chosen exit status.
-  [ ] Distinguish a buffer's address from the bytes stored there.
-  [ ] Explain DB, EQU, and LEA.
-  [ ] Place integer/pointer arguments in RCX, RDX, R8, and R9.
-  [ ] Explain why a value in RAX may not survive a later call.
+  * Build and run hello.asm and inspect a chosen exit status.
+  * Distinguish a buffer's address from the bytes stored there.
+  * Explain DB, EQU, and LEA.
+  * Place integer/pointer arguments in RCX, RDX, R8, and R9.
+  * Explain why a value in RAX may not survive a later call.
 
 Review ..\02-console-output\lesson.txt if needed.
 Null termination, loop invariants, conditional branches, and the full
