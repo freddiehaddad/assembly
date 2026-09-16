@@ -1,0 +1,220 @@
+USING WINDBGX: FROM STARTUP TO YOUR FIRST INSTRUCTION
+=====================================================
+
+Goal: stop at main in exit.exe, observe its instructions and registers, and
+distinguish source-line highlighting from the actual execution state.
+
+WinDbgX.exe is a suitable debugger for these Windows x64 programs. x64dbg is a
+more immediately visual alternative, but switching is not necessary. This
+walkthrough uses WinDbg's Command window rather than toolbar shortcuts.
+
+1. BUILD AND LAUNCH
+-------------------
+
+In a Visual Studio x64 developer PowerShell, from the Lesson 1 directory:
+
+    ..\..\build.ps1 -Source exit.asm -Debug
+
+The script assembles with /Zi and links with /debug. It builds without running,
+leaving these files together:
+
+    exit.exe   machine code and executable metadata
+    exit.pdb   symbols and mappings between code addresses and source lines
+    exit.asm   the original source text
+
+Launch WinDbgX, choose the option to launch an executable, and select exit.exe.
+Alternatively, from the lesson directory in PowerShell:
+
+    WinDbgX.exe .\exit.exe
+
+The remaining commands in this guide belong in WINDBG'S COMMAND WINDOW, not
+PowerShell. Enter them one at a time while the target is paused.
+
+2. UNDERSTAND THE INITIAL STOP
+------------------------------
+
+A fresh launch normally stops inside Windows startup, before main:
+
+    Break instruction exception - code 80000003 (first chance)
+    ntdll!LdrpDoDebuggerBreak+...
+    ... cc    int 3
+
+This is the deliberate initial breakpoint. It gives you a chance to set your own
+breakpoint before main runs. Do not single-step through all of Windows startup
+to reach your code.
+
+Other common launch messages:
+
+    ModLoad             a module, such as your EXE or a DLL, was loaded
+    Extensions Gallery  debugger extension setup, not your program's output
+    Missing old paths   stale source/symbol settings from another project
+    Shadow Stack        hardware return-address protection; NOT the ABI's
+                        32-byte shadow space
+
+"First chance" means the debugger is notified before application exception
+handlers run. This particular startup breakpoint is expected; do not assume that
+every first-chance exception is harmless.
+
+3. LOCATE YOUR SYMBOLS AND SOURCE
+---------------------------------
+
+For this checkout, enter:
+
+    .symfix
+    .sympath+ S:\projects\git\assembly\lessons\01-exit
+    .srcpath S:\projects\git\assembly\lessons\01-exit
+    .lines -e
+    .reload /f exit.exe
+    x exit!main
+
+Replace the path with your project location.
+
+.symfix replaces the symbol search path with Microsoft's public symbol server
+configuration; .sympath+ adds the directory containing your PDB. The server
+supplies Windows symbols, not symbols for your own program. .srcpath replaces
+the source search path. .lines -e enables source-line information, and .reload
+/f forces symbol loading for this executable.
+
+Symbol paths locate PDBs; source paths locate text files. They solve different
+problems. Changing either path does not change the target code. For local-only
+debugging, you can instead set the symbol path directly:
+
+    .sympath S:\projects\git\assembly\lessons\01-exit
+
+x exit!main should display an address. The notation means "symbol main inside
+module exit"; the EXE extension is omitted from the module name.
+
+If it cannot resolve main, inspect:
+
+    lmv m exit
+
+Check the loaded image path and symbol status. The EXE and PDB must come from
+the same build. Do not continue blindly with an unresolved breakpoint.
+
+4. STOP AT MAIN AND DISPLAY THE INSTRUCTIONS
+--------------------------------------------
+
+    bu exit!main
+    g
+
+bu sets a symbolic breakpoint. g runs until a breakpoint or another stop. At
+this breakpoint, main's first instruction has NOT executed yet.
+
+    l-t
+    u @rip L3
+    .open -a @rip
+
+The first command begins with lowercase L. It selects instruction-level stepping
+rather than source-line stepping. It does not hide the source.
+
+RIP is the instruction pointer. U disassembles memory; L3 requests three
+instructions. .open -a opens the source associated with that address. The
+instructions should correspond to:
+
+    sub rsp, 28h
+    mov ecx, 2Ah
+    call ...          ; ExitProcess, possibly through an import thunk
+
+2Ah is decimal 42. Addresses vary between runs; use symbols rather than copying
+an address from an earlier session.
+
+5. SOURCE HIGHLIGHTING IS NOT A SEPARATE EXECUTION POSITION
+-----------------------------------------------------------
+
+The breakpoint may highlight "main proc frame" instead of "sub rsp,28h". PROC is
+an assembler directive, not an instruction. The address of main is the address
+of its first instruction: SUB.
+
+Debug information can associate that address with the PROC declaration. Comments
+and directives between PROC and SUB do not add executable steps. .ALLOCSTACK and
+.ENDPROLOG describe unwind metadata, not CPU operations.
+
+In instruction mode, t executes the instruction at RIP, then stops before the
+next instruction. It does not advance to the next line of source text.
+
+    Action                  Next instruction       Just executed
+    g hits main             sub rsp,28h            nothing in main
+    First t                 mov ecx,2Ah            sub rsp,28h
+    Second t                call ExitProcess      mov ecx,2Ah
+
+The current instruction is the NEXT instruction to execute, not the one that
+just finished. If the source highlight is confusing, use:
+
+    u @rip L1
+
+This displays exactly the next instruction. Trust RIP and disassembly; source
+highlighting is a mapping onto that state.
+
+6. OBSERVE REGISTERS AND THE STACK
+----------------------------------
+
+Starting at the main breakpoint BEFORE the SUB, enter:
+
+    r rsp
+    ? (@rsp & 0xf)
+    t
+    r rsp
+    ? (@rsp & 0xf)
+    t
+    r rcx
+
+R displays a register; ? evaluates an expression without changing it. The mask
+0xf extracts RSP's low four bits: zero means 16-byte alignment.
+
+Expected observations:
+    Before SUB:     RSP's low four bits are 8.
+    After first t:  RSP is 28h (40 decimal) lower; low four bits are 0.
+    After second t: RCX contains 2a, which is decimal 42.
+
+You are now stopped before CALL. Enter g to finish. Expect process exit status
+0x2a, not printed text. ExitProcess does not return.
+
+Checkpoint: restart and compare these two memory observations:
+
+    dq @rsp L1          before SUB: the incoming eight-byte return address
+    dq @rsp+0x28 L1     after SUB: the SAME return address in memory
+
+DQ displays eight-byte values. Each line starts with the memory address,
+followed by the value stored there. SUB changes RSP, not the return address's
+location. Newly reserved stack storage is not initialized.
+
+7. EVERYDAY CONTROLS AND TROUBLESHOOTING
+----------------------------------------
+
+With instruction mode selected by l-t:
+
+    t                execute one instruction, stepping into calls
+    p                execute one instruction, stepping over calls
+    g                continue until a breakpoint, other stop, or exit
+    r                display registers
+    r rip            display the next instruction's address
+    u @rip L1        display that instruction without executing it
+    dq @rsp L1       read one eight-byte stack value
+    bl               list breakpoints and their numeric IDs
+    bc 0             remove breakpoint ID 0 (check BL for the actual ID)
+    .restart         restart a program launched by this debugger
+
+Usually step into your own procedures and over Windows APIs. p over a returning
+call stops after the call returns, unless another event stops it. p over
+ExitProcess ends the process; there is no return to step past.
+
+.restart also works after a launched program exits; it is not available for a
+process you merely attached to. At the initial stop, use bl to check the main
+breakpoint, set bu exit!main if needed, then g to reach it. If you edit source,
+end the old debugging session, rebuild with -Debug, and launch the newly built
+executable so source and symbols still match.
+
+If old search paths reappear, inspect .sympath and .srcpath without arguments.
+Check saved debugger settings and symbol-path environment variables such as
+_NT_SYMBOL_PATH and _NT_ALT_SYMBOL_PATH. Fix the settings that supplied the
+obsolete paths; recreating unrelated folders is not a fix.
+
+If instructions appear but source does not, check the matching PDB, source path,
+and .lines -e. Disassembly itself does not require the source file. If stepping
+seems to skip several instructions, reselect l-t.
+
+REFERENCES
+----------
+
+stack-alignment.txt
+caller-vs-callee-rsp.txt

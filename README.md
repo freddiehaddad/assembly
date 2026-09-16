@@ -79,11 +79,15 @@ link /nologo /machine:x64 /subsystem:console /entry:main /nodefaultlib exit.obj 
 
 Use the manual linker command when an exercise changes the entry symbol.
 
+For a first debugging session, follow `lessons\concepts\windbg.txt`. It walks
+through WinDbgX startup, symbols, breakpoints, and instruction-level stepping
+using `exit.exe` from lesson 1.
+
 ## References and file conventions
 
-`glossary.txt` defines terminology. The three documents in `lessons\concepts`
-cover the calling convention, alignment calculations, and changing RSP
-viewpoints. They are references to consult as needed, not required cover-to-cover
+`glossary.txt` defines terminology. The documents in `lessons\concepts` cover the
+calling convention, alignment calculations, changing RSP viewpoints, and using
+WinDbg. They are references to consult as needed, not required cover-to-cover
 reading before Lesson 1. Links in lesson text are relative to that text's folder.
 
 Repository text is ASCII with CRLF line endings and no byte-order mark.

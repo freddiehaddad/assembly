@@ -29,4 +29,11 @@ The exact diagnostic wording can vary by tool version.
    Check the actual ml64 diagnostic. Editor language-server support is not the
    assembler, and directive support can differ.
 
-Reference: ..\concepts\stack-alignment.txt
+7. WinDbg highlights PROC, then stepping appears to skip SUB.
+   The procedure symbol and its first instruction share an address. Source
+   highlighting can point to PROC even though RIP points to SUB. The first
+   instruction-level step executes SUB and stops before MOV, as intended.
+   Use "u @rip L1" to see the instruction that will execute next.
+
+References: ..\concepts\stack-alignment.txt
+            ..\concepts\windbg.txt

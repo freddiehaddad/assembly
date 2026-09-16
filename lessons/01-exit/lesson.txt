@@ -109,6 +109,10 @@ In this directory, in a Visual Studio x64 developer PowerShell:
 Expect no program output; PowerShell displays 42 for the final command. For the
 manual assembler/linker commands, see ..\..\README.md.
 
+To observe these instructions and their effect on RSP, follow
+..\concepts\windbg.txt. It starts at WinDbgX's initial breakpoint and explains
+how to reach main, display the source, and step one instruction at a time.
+
 Two more instructions used in the exercises:
 
     xor ecx, ecx     sets ECX and all of RCX to zero; changes flags
