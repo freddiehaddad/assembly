@@ -4,7 +4,8 @@ extern ExitProcess:proc
 
 .code ; code section, analogous to the text segment in Unix terminology
 
-main proc frame ; /entry:main selects this procedure; FRAME enables unwind metadata
+main proc frame	; /entry:main selects this procedure
+		; FRAME enables unwind metadata
 	; Reserve 20h (32) bytes of shadow space plus 08h of alignment padding.
 	; 28h is the total subtraction, not an argument offset.
 	sub rsp, 28h

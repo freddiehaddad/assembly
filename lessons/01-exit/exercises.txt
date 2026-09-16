@@ -1,18 +1,18 @@
 LESSON 1: EXERCISES
-==================
+===================
 
 TIER 1: OBSERVE (CORE)
----------------------
+----------------------
 
 1. Build exit.asm using lesson.txt. Run it, then read $LASTEXITCODE.
    Expected: no program text, status 42.
 
 2. Change the status to 0, then 1234. Rebuild for each change.
-   Expected: exactly the chosen status in both cases. Windows process
-   status is 32 bits; it is not limited to the Unix shell's usual 0-255 range.
+   Expected: exactly the chosen status in both cases. Windows process status is
+   32 bits; it is not limited to the Unix shell's usual 0-255 range.
 
 TIER 2: EXPLAIN (CORE)
----------------------
+----------------------
 
 3. Predict the status after replacing MOV ECX,42 with:
 
@@ -22,22 +22,22 @@ TIER 2: EXPLAIN (CORE)
    Run it and reconcile the result with your prediction.
 
 4. With entry RSP = 1008h, calculate RSP after subtracting 20h and 28h.
-   For each, check storage capacity AND alignment. Do this on paper;
-   a misaligned program happening to run would not prove ABI correctness.
+   For each, check storage capacity AND alignment. Do this on paper; a
+   misaligned program happening to run would not prove ABI correctness.
 
 5. Explain why .ALLOCSTACK does not allocate memory a second time.
    Why is there no ADD RSP or RET after ExitProcess?
 
 TIER 3: APPLY (OPTIONAL)
------------------------
+------------------------
 
-6. Rename main to start, keeping the filename exit.asm. Assemble normally,
-   then use the manual link command from ..\..\README.md with /entry:start.
-   Expected: the same status and behavior as before.
+6. Rename main to start, keeping the filename exit.asm. Assemble normally, then
+   use the manual link command from ..\..\README.md with /entry:start. Expected:
+   the same status and behavior as before.
 
-7. Pass 42 by first loading EAX, then copying EAX to ECX. Explain which
-   register is required by the API and which is merely your temporary.
+7. Pass 42 by first loading EAX, then copying EAX to ECX. Explain which register
+   is required by the API and which is merely your temporary.
 
-Keep a short record of predictions and results in your own notes. Restore
-the worked example's status to 42 when you finish, or keep variations in a
-separate source file selected explicitly with build.ps1 -Source.
+Keep a short record of predictions and results in your own notes. Restore the
+worked example's status to 42 when you finish, or keep variations in a separate
+source file selected explicitly with build.ps1 -Source.

@@ -3,12 +3,12 @@ LESSON 1: OBJECTIVES
 
 After the core exercises, you should be able to:
 
-  [ ] Distinguish assembler directives, CPU instructions, and API calls.
-  [ ] Describe the source -> object -> executable build stages.
-  [ ] Explain how /entry selects a symbol and how ExitProcess receives a status.
-  [ ] Explain the effect of writing ECX on the full RCX register.
-  [ ] Derive 28h from shadow space and entry alignment, rather than memorize it.
-  [ ] Distinguish program output from the exit status shown by PowerShell.
+  * Distinguish assembler directives, CPU instructions, and API calls.
+  * Describe the source -> object -> executable build stages.
+  * Explain how /entry selects a symbol and how ExitProcess receives a status.
+  * Explain the effect of writing ECX on the full RCX register.
+  * Derive 28h from shadow space and entry alignment, rather than memorize it.
+  * Distinguish program output from the exit status shown by PowerShell.
 
 Completion: build the example and finish Tiers 1 and 2 in exercises.txt.
 Explain the two purposes of its stack allocation. Tier 3 is optional.

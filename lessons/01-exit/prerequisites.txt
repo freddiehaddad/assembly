@@ -1,20 +1,20 @@
 LESSON 1: PREREQUISITES
-======================
+=======================
 
 Tools:
-  [ ] Windows x64 with Visual Studio's x64 C++ build tools and Windows SDK.
-  [ ] A developer PowerShell where ml64.exe and Microsoft's link.exe work.
-  [ ] A text editor; save source as ASCII text with CRLF line endings.
+  * Windows x64 with Visual Studio's x64 C++ build tools and Windows SDK.
+  * A developer PowerShell where ml64.exe and Microsoft's link.exe work.
+  * A text editor; save source as ASCII text with CRLF line endings.
 
 Background:
-  [ ] Recognize a byte, a hexadecimal number, and a function argument.
-  [ ] Be comfortable editing a file and running a terminal command.
+  * Recognize a byte, a hexadecimal number, and a function argument.
+  * Be comfortable editing a file and running a terminal command.
 
-You do not need to know x86 instructions or the Windows ABI yet.
-Use ..\..\glossary.txt to look up unfamiliar terms as they appear.
+You do not need to know x86 instructions or the Windows ABI yet. Use
+..\..\glossary.txt to look up unfamiliar terms as they appear.
 
-Get-Command ml64.exe, link.exe checks tool visibility in PowerShell.
-If the tools or SDK libraries are missing, repair the x64 developer
-environment rather than copying executables or libraries into the lesson.
+Get-Command ml64.exe, link.exe checks tool visibility in PowerShell. If the
+tools or SDK libraries are missing, repair the x64 developer environment rather
+than copying executables or libraries into the lesson.
 
 Next: objectives.txt, then lesson.txt.

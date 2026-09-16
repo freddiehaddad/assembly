@@ -1,38 +1,37 @@
 LESSON 1: FROM SOURCE TO A RUNNING PROCESS
-========================================
+==========================================
 
-Goal: build exit.asm and explain how it terminates with a chosen status.
-Read the source alongside this lesson; it is the complete worked example.
+Goal: build exit.asm and explain how it terminates with a chosen status. Read
+the source alongside this lesson; it is the complete worked example.
 
 1. SOURCE, OBJECT, EXECUTABLE
-----------------------------
+-----------------------------
 
     exit.asm --ml64--> exit.obj --link--> exit.exe
 
-The assembler encodes instructions and records symbols and relocations.
-The linker resolves symbols and produces a Windows PE executable.
-kernel32.lib is an import library: it describes Windows functions supplied
-by DLLs, rather than copying the Windows kernel into our program.
+The assembler encodes instructions and records symbols and relocations. The
+linker resolves symbols and produces a Windows PE executable. kernel32.lib is an
+import library: it describes Windows functions supplied by DLLs, rather than
+copying the Windows kernel into our program.
 
 In the source:
 
-    option casemap:none   keeps symbol names case-sensitive
-    extern ExitProcess:proc
-                          declares a procedure defined elsewhere
-    .code                 begins executable code
-    main proc frame       begins our procedure and its unwind description
-    main endp             ends that procedure
-    end                   ends the source file
+    option casemap:none      keeps symbol names case-sensitive
+    extern ExitProcess:proc  declares a procedure defined elsewhere
+    .code                    begins executable code
+    main proc frame          begins our procedure and its unwind description
+    main endp                ends that procedure
+    end                      ends the source file
 
-These are assembler directives, not instructions the processor executes.
-ml64's END does not accept an entry-symbol operand; use END, not END main.
+These are assembler directives, not instructions the processor executes. ml64's
+END does not accept an entry-symbol operand; use END, not END main.
 
 2. ENTRY AND TERMINATION
------------------------
+------------------------
 
-/entry:main selects our procedure as the executable entry point. The name
-main is a choice; it is not related to the source filename and does not
-automatically create C's main(argc, argv) interface.
+/entry:main selects our procedure as the executable entry point. The name main
+is a choice; it is not related to the source filename and does not automatically
+create C's main(argc, argv) interface.
 
 Our startup path is:
 
@@ -42,48 +41,48 @@ With ordinary C runtime startup, it would instead include:
 
     Windows startup -> mainCRTStartup -> user main -> runtime cleanup
 
-That startup code initializes runtime services and prepares arguments.
-Bypassing it changes startup and cleanup, not the Windows x64 calling
-convention. Calling a Windows API is valid in either arrangement.
+That startup code initializes runtime services and prepares arguments. Bypassing
+it changes startup and cleanup, not the Windows x64 calling convention. Calling
+a Windows API is valid in either arrangement.
 
 ExitProcess takes one 32-bit unsigned status value and does not return:
 
     mov ecx, 42
     call ExitProcess
 
-ECX supplies its first parameter. Writing ECX also clears the upper 32 bits
-of RCX. The value 42 is an exit status, not text printed to the terminal.
-An ordinary returning procedure would restore its frame and execute RET;
-this path terminates the process instead.
+ECX supplies its first parameter. Writing ECX also clears the upper 32 bits of
+RCX. The value 42 is an exit status, not text printed to the terminal. An
+ordinary returning procedure would restore its frame and execute RET; this path
+terminates the process instead.
 
-Checkpoint: which tool needs to know where ExitProcess is provided?
-Which tool selects the executable entry point?
+Checkpoint: which tool needs to know where ExitProcess is provided? Which tool
+selects the executable entry point?
 
 3. THE FIRST CALL FRAME
 -----------------------
 
-The Windows ABI requires 32 bytes of shadow space for a callee, even one
-with a single argument. It also requires RSP to be 16-byte aligned at CALL.
+The Windows ABI requires 32 bytes of shadow space for a callee, even one with a
+single argument. It also requires RSP to be 16-byte aligned at CALL.
 
 At our Windows x64 entry point, RSP is 8 modulo 16. For example:
 
     Entry RSP:              1008h
     After SUB RSP,28h:      0FE0h (a multiple of 16)
 
-We reserve 20h bytes of shadow space and 8 bytes of padding. From the new
-RSP, low address to high:
+We reserve 20h bytes of shadow space and 8 bytes of padding. From the new RSP,
+low address to high:
 
     [rsp+00h .. rsp+1Fh]  shadow space for ExitProcess
     [rsp+20h .. rsp+27h]  unused alignment padding
     [rsp+28h .. rsp+2Fh]  our incoming return address, already present
 
-SUB reserves memory; it does not initialize it. RSP points to the first
-byte of the reserved block, not to its high-address end. CALL will push a
-new return address BELOW this block before entering ExitProcess.
+SUB reserves memory; it does not initialize it. RSP points to the first byte of
+the reserved block, not to its high-address end. CALL will push a new return
+address BELOW this block before entering ExitProcess.
 
-28h is the total allocation in this example, not a universal prologue.
-Later frames need different sizes. A frame pointer in RBP is unnecessary
-while RSP stays fixed in the body.
+28h is the total allocation in this example, not a universal prologue. Later
+frames need different sizes. A frame pointer in RBP is unnecessary while RSP
+stays fixed in the body.
 
 The source annotates the allocation:
 
@@ -92,14 +91,14 @@ The source annotates the allocation:
     .endprolog
 
 The dot-directives describe the prologue for Windows stack unwinding and
-debuggers; they do not subtract another 28h. We use these annotations from
-the start and study saved-register prologues in Lesson 4.
+debuggers; they do not subtract another 28h. We use these annotations from the
+start and study saved-register prologues in Lesson 4.
 
-Checkpoint: subtract 20h instead of 28h on paper. Does it reserve the
-shadow space? Does it produce an aligned call site? These are two tests.
+Checkpoint: subtract 20h instead of 28h on paper. Does it reserve the shadow
+space? Does it produce an aligned call site? These are two tests.
 
 4. BUILD AND OBSERVE
--------------------
+--------------------
 
 In this directory, in a Visual Studio x64 developer PowerShell:
 
@@ -107,16 +106,16 @@ In this directory, in a Visual Studio x64 developer PowerShell:
     .\exit.exe
     $LASTEXITCODE
 
-Expect no program output; PowerShell displays 42 for the final command.
-For the manual assembler/linker commands, see ..\..\README.md.
+Expect no program output; PowerShell displays 42 for the final command. For the
+manual assembler/linker commands, see ..\..\README.md.
 
 Two more instructions used in the exercises:
 
     xor ecx, ecx     sets ECX and all of RCX to zero; changes flags
     inc ecx          adds one to ECX; changes arithmetic flags except CF
 
-MOV copies a value and does not change arithmetic flags. Flags become
-important for conditional branches in Lesson 3.
+MOV copies a value and does not change arithmetic flags. Flags become important
+for conditional branches in Lesson 3.
 
 Continue with exercises.txt. Reference only as needed:
 

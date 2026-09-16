@@ -1,24 +1,24 @@
 LESSON 1: COMMON MISTAKES
-=======================
+=========================
 
 The exact diagnostic wording can vary by tool version.
 
 1. The assembler reports an undefined ExitProcess symbol.
-   Declare extern ExitProcess:proc. That tells MASM about the symbol;
-   the linker still needs kernel32.lib to resolve the import.
+   Declare extern ExitProcess:proc. That tells MASM about the symbol; the linker
+   still needs kernel32.lib to resolve the import.
 
 2. The linker reports an unresolved entry point.
-   Match the procedure name and /entry spelling exactly. If /entry was
-   omitted, the linker may look for a runtime startup symbol we do not
-   supply. The default build script expects main.
+   Match the procedure name and /entry spelling exactly. If /entry was omitted,
+   the linker may look for a runtime startup symbol we do not supply. The
+   default build script expects main.
 
 3. ml64 reports a syntax error at "end main".
-   Use plain END. An entry operand is not supported by ml64's END syntax;
-   this is not a runtime error or just a redundant linker setting.
+   Use plain END. An entry operand is not supported by ml64's END syntax; this
+   is not a runtime error or just a redundant linker setting.
 
 4. The program runs, but no 42 appears.
-   ExitProcess does not print. Execute $LASTEXITCODE immediately afterward
-   in PowerShell; a subsequent native command can replace that value.
+   ExitProcess does not print. Execute $LASTEXITCODE immediately afterward in
+   PowerShell; a subsequent native command can replace that value.
 
 5. A call crashes, or only works on one machine.
    Check both shadow space and alignment, not just one. For this exact
@@ -26,7 +26,7 @@ The exact diagnostic wording can vary by tool version.
    "always subtract 28h" is not the general rule.
 
 6. The editor highlights .ALLOCSTACK or another MASM directive as invalid.
-   Check the actual ml64 diagnostic. Editor language-server support is not
-   the assembler, and directive support can differ.
+   Check the actual ml64 diagnostic. Editor language-server support is not the
+   assembler, and directive support can differ.
 
 Reference: ..\concepts\stack-alignment.txt
