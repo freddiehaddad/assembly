@@ -1,5 +1,5 @@
 ASSEMBLY AND SYSTEMS GLOSSARY
-============================
+=============================
 
 Use this as a lookup reference, not a vocabulary list to memorize.
 
@@ -8,35 +8,35 @@ ABI (APPLICATION BINARY INTERFACE)
   including calling conventions, type layout, and executable interfaces.
 
 ADDRESS / POINTER
-  An address identifies a byte in a process's virtual address space. A
-  pointer is a value used as an address. The pointers in these lessons are
+  An address identifies a byte in a process's virtual address space. A pointer
+  is a value used as an address. The pointers in these lessons are
   64 bits; the objects they point to need not be 64 bits.
 
 ALIGNMENT
-  An address is aligned to N bytes when it is divisible by N. For example,
-  1000h is 16-byte aligned; 1008h is not. Alignment is not the same as size.
+  An address is aligned to N bytes when it is divisible by N. For example, 1000h
+  is 16-byte aligned; 1008h is not. Alignment is not the same as size.
 
 ASSEMBLER / DIRECTIVE
-  The assembler translates source into object code. A directive controls
-  that translation or declares data; it is not a CPU instruction. Examples:
-  EQU defines a constant; DB emits bytes; .ALLOCSTACK describes unwind data.
+  The assembler translates source into object code. A directive controls that
+  translation or declares data; it is not a CPU instruction. Examples: EQU
+  defines a constant; DB emits bytes; .ALLOCSTACK describes unwind data.
 
 BYTE / WORD / DWORD / QWORD
-  In MASM: 8, 16, 32, and 64 bits respectively. A byte has its own address.
-  A multi-byte object starts at its lowest-addressed byte.
+  In MASM: 8, 16, 32, and 64 bits respectively. A byte has its own address. A
+  multi-byte object starts at its lowest-addressed byte.
 
 CALLEE / CALLER
-  The callee is the procedure being called; the caller makes the call.
-  A procedure can be a callee of one function and a caller of another.
+  The callee is the procedure being called; the caller makes the call. A
+  procedure can be a callee of one function and a caller of another.
 
 CALLING CONVENTION
-  Rules for arguments, return values, preserved registers, and stack use.
-  These lessons use the standard Windows x64 convention.
+  Rules for arguments, return values, preserved registers, and stack use. These
+  lessons use the standard Windows x64 convention.
 
 DISPLACEMENT / OFFSET
-  A displacement is a constant added in an address expression, such as 20h
-  in [rsp+20h]. An offset is a distance from a stated reference address;
-  changing the reference changes the offset, not the object's address.
+  A displacement is a constant added in an address expression, such as 20h in
+  [rsp+20h]. An offset is a distance from a stated reference address; changing
+  the reference changes the offset, not the object's address.
 
 ENTRY POINT
   The address in an executable where Windows startup transfers control.
@@ -47,8 +47,8 @@ FLAGS
   branches. CMP sets flags as if subtracting, but does not store the result.
 
 FRAME POINTER
-  A register, often RBP, providing a stable reference within a frame.
-  Optional for our fixed-size frames, where RSP stays fixed in the body.
+  A register, often RBP, providing a stable reference within a frame. Optional
+  for our fixed-size frames, where RSP stays fixed in the body.
 
 HANDLE
   An opaque Windows value identifying a resource. It is not a pointer to
@@ -58,88 +58,88 @@ IMMEDIATE
   A constant encoded in an instruction: 42 in "mov ecx, 42".
 
 ISA (INSTRUCTION SET ARCHITECTURE)
-  The software-visible CPU model: instructions, registers, addressing,
-  and their effects. MASM and AT&T notation can express the same x86 ISA.
+  The software-visible CPU model: instructions, registers, addressing, and their
+  effects. MASM and AT&T notation can express the same x86 ISA.
 
 LEAF PROCEDURE
-  Commonly, a procedure that calls no other procedure. A Windows unwind
-  leaf also leaves RSP and other nonvolatile registers unchanged and needs
-  no unwind entry. A call-free procedure that allocates a frame is not such
-  an unwind leaf.
+  Commonly, a procedure that calls no other procedure. A Windows unwind leaf
+  also leaves RSP and other nonvolatile registers unchanged and needs no unwind
+  entry. A call-free procedure that allocates a frame is not such an unwind
+  leaf.
 
 LITTLE-ENDIAN
   The least significant byte of a multi-byte value is stored at the lowest
   address. A DWORD 11223344h occupies bytes 44h, 33h, 22h, 11h in address order.
 
 NONVOLATILE / CALLEE-SAVED REGISTER
-  A register whose incoming value a returning callee must preserve.
-  It need only save and restore a register if it changes it. Integer examples:
-  RBX, RBP, RSI, RDI, R12-R15. RSP must also be restored before RET.
+  A register whose incoming value a returning callee must preserve. It need only
+  save and restore a register if it changes it. Integer examples: RBX, RBP, RSI,
+  RDI, R12-R15. RSP must also be restored before RET.
 
 NULL / NULL-TERMINATED STRING
-  A null pointer is the pointer value zero. A byte string's null terminator
-  is a zero byte in memory. It is not the printable character '0' (30h).
-  Strings need a representation contract: terminator, explicit length, etc.
+  A null pointer is the pointer value zero. A byte string's null terminator is a
+  zero byte in memory. It is not the printable character '0' (30h). Strings need
+  a representation contract: terminator, explicit length, etc.
 
 OBJECT FILE / LINKER / IMPORT LIBRARY
-  An object file contains code/data, symbols, and relocation information.
-  The linker combines objects and resolves references to build an executable.
-  An import library describes functions provided by a DLL at runtime.
+  An object file contains code/data, symbols, and relocation information. The
+  linker combines objects and resolves references to build an executable. An
+  import library describes functions provided by a DLL at runtime.
 
 OPERAND
   An input or destination of an instruction. MASM usually writes destination
-  first. Brackets specify a memory operand; LEA computes the address instead
-  of loading the memory contents.
+  first. Brackets specify a memory operand; LEA computes the address instead of
+  loading the memory contents.
 
 PADDING
-  Unused bytes in a chosen layout, often inserted to satisfy alignment.
-  There is no CPU instruction that "creates padding"; it is part of the
-  allocation calculation.
+  Unused bytes in a chosen layout, often inserted to satisfy alignment. There is
+  no CPU instruction that "creates padding"; it is part of the allocation
+  calculation.
 
 PROLOGUE / EPILOGUE
   Code that establishes a procedure's frame and saves registers / code that
-  reverses those changes before returning. MASM's unwind directives describe
-  the prologue; they do not execute PUSH, SUB, ADD, or POP for you.
+  reverses those changes before returning. MASM's unwind directives describe the
+  prologue; they do not execute PUSH, SUB, ADD, or POP for you.
 
 PTR
   MASM's type-override operator. BYTE PTR, DWORD PTR, and QWORD PTR specify
-  operand sizes. "mov qword ptr [rsp+20h], 0" stores eight zero bytes.
-  PTR does not turn the stored value into a pointer.
+  operand sizes. "mov qword ptr [rsp+20h], 0" stores eight zero bytes. PTR does
+  not turn the stored value into a pointer.
 
 REGISTER
-  A named CPU storage location. RAX is 64 bits, EAX its low 32 bits, AX its
-  low 16 bits, and AL its low 8 bits. A write to EAX also clears RAX's upper
+  A named CPU storage location. RAX is 64 bits, EAX its low 32 bits, AX its low
+  16 bits, and AL its low 8 bits. A write to EAX also clears RAX's upper
   32 bits; writes to AX or AL leave the other bits unchanged.
 
 RETURN ADDRESS
   For a normal 64-bit near CALL, the address of the following instruction,
-  pushed as eight bytes. RET reads it from [rsp] and advances RSP by eight.
-  It is distinct from the function's return value in RAX.
+  pushed as eight bytes. RET reads it from [rsp] and advances RSP by eight. It
+  is distinct from the function's return value in RAX.
 
 SECTION
   A region of an object or executable. MASM's .code, .data, and .const
-  directives normally contribute to PE .text, .data, and .rdata sections.
-  .data? declares uninitialized data. Section permissions matter for writes.
+  directives normally contribute to PE .text, .data, and .rdata sections. .data?
+  declares uninitialized data. Section permissions matter for writes.
 
 SHADOW / HOME SPACE
-  Four eight-byte slots supplied by a Windows x64 caller for its callee.
-  They need not contain copies of the argument registers. The callee may
-  overwrite them; the caller cannot keep live values there across that call.
+  Four eight-byte slots supplied by a Windows x64 caller for its callee. They
+  need not contain copies of the argument registers. The callee may overwrite
+  them; the caller cannot keep live values there across that call.
 
 SIGN EXTENSION / ZERO EXTENSION
   Widening a bit pattern by repeating its sign bit / filling with zero bits.
-  MOVSXD RAX, EAX sign-extends 32 bits to 64. Writing EAX zero-extends into
-  RAX. These operations differ for a 32-bit negative signed value.
+  MOVSXD RAX, EAX sign-extends 32 bits to 64. Writing EAX zero-extends into RAX.
+  These operations differ for a 32-bit negative signed value.
 
 STACK / STACK POINTER (RSP)
-  A thread's stack is memory used for calls and temporary storage. RSP points
-  to its current low-address end. PUSH subtracts space then stores; POP reads
-  then adds space. SUB reserves space without initializing it, so [rsp] need
-  not hold the last pushed value after a frame allocation.
+  A thread's stack is memory used for calls and temporary storage. RSP points to
+  its current low-address end. PUSH subtracts space then stores; POP reads then
+  adds space. SUB reserves space without initializing it, so [rsp] need not hold
+  the last pushed value after a frame allocation.
 
 VOLATILE / CALLER-SAVED REGISTER
-  A register a callee may overwrite. If a caller needs its old value after
-  a call, the caller must arrange to preserve it. Integer examples:
-  RAX, RCX, RDX, R8-R11. "Volatile" here is not C's volatile type qualifier.
+  A register a callee may overwrite. If a caller needs its old value after a
+  call, the caller must arrange to preserve it. Integer examples: RAX, RCX, RDX,
+  R8-R11. "Volatile" here is not C's volatile type qualifier.
 
 Further reference: lessons\concepts\windows-x64-calling-convention.txt
