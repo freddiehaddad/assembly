@@ -121,10 +121,10 @@ Two more instructions used in the exercises:
 MOV copies a value and does not change arithmetic flags. Flags become important
 for conditional branches in Lesson 3.
 
-Continue with exercises.txt. Reference only as needed:
+Continue with exercises.txt.
+
+Reference only as needed:
 
     ..\..\glossary.txt
     ..\concepts\windows-x64-calling-convention.txt
     ..\concepts\stack-alignment.txt
-    https://learn.microsoft.com/en-us/cpp/build/reference/entry-entry-point-symbol
-    https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-exitprocess
