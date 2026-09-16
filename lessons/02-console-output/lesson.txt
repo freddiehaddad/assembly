@@ -1,50 +1,50 @@
 LESSON 2: BYTES, ADDRESSES, AND OUTPUT
-===================================
+======================================
 
 Goal: explain every argument in hello.asm's WriteFile call, including the
 difference between a value and an address where a value will be stored.
 
 1. MEMORY IS BYTE-ADDRESSED
---------------------------
+---------------------------
 
-A pointer identifies a byte in the process's virtual address space.
-An object's size is a separate fact: a 64-bit pointer can point to one byte,
-a four-byte integer, or a large array.
+A pointer identifies a byte in the process's virtual address space. An object's
+size is a separate fact: a 64-bit pointer can point to one byte, a four-byte
+integer, or a large array.
 
 In hello.asm:
 
     message db "Hello from x64 assembly!", 13, 10
     message_length equ $ - message
 
-DB emits bytes. 13 and 10 are ASCII carriage return and line feed (CRLF).
-EQU defines an assembly-time constant; $ is the current assembly location.
-There are 26 bytes here. No length field or terminator is automatically
-stored with the text.
+DB emits bytes. 13 and 10 are ASCII carriage return and line feed (CRLF). EQU
+defines an assembly-time constant; $ is the current assembly location. There are
+26 bytes here. No length field or terminator is automatically stored with the
+text.
 
-.data declares writable initialized data. .const would place read-only
-data in the executable; .data? can declare uninitialized storage such as
-"std_out dq ?" for a saved eight-byte handle.
+.data declares writable initialized data. .const would place read-only data in
+the executable; .data? can declare uninitialized storage such as "std_out dq ?"
+for a saved eight-byte handle.
 
     lea rdx, message          RDX = address of the first byte
     mov al, byte ptr [rdx]    AL = the byte at that address
 
-LEA computes an address without reading its contents. In contrast, MOV
-with a memory source loads data. Intel addressing can combine a base,
-index, and displacement; it does not require separate ADD instructions.
+LEA computes an address without reading its contents. In contrast, MOV with a
+memory source loads data. Intel addressing can combine a base, index, and
+displacement; it does not require separate ADD instructions.
 
-Multi-byte values are little-endian: a DWORD 11223344h occupies bytes
-44h, 33h, 22h, 11h from low address to high. Byte order and stack growth
-direction are different concepts.
+Multi-byte values are little-endian: a DWORD 11223344h occupies bytes 44h, 33h,
+22h, 11h from low address to high. Byte order and stack growth direction are
+different concepts.
 
-Checkpoint: what are the size of a pointer to message, the size of one
-message element, and the size of the whole message?
+Checkpoint: what are the size of a pointer to message, the size of one message
+element, and the size of the whole message?
 
 2. READ THE API'S TYPES
-----------------------
+-----------------------
 
-GetStdHandle takes a DWORD selector. STD_OUTPUT_HANDLE is the 32-bit bit
-pattern for -11, so "mov ecx, STD_OUTPUT_HANDLE" is appropriate. Its result
-is a pointer-sized HANDLE in RAX. A handle is opaque: do not dereference it.
+GetStdHandle takes a DWORD selector. STD_OUTPUT_HANDLE is the 32-bit bit pattern
+for -11, so "mov ecx, STD_OUTPUT_HANDLE" is appropriate. Its result is a
+pointer-sized HANDLE in RAX. A handle is opaque: do not dereference it.
 
 WriteFile's integer/pointer interface maps as follows, before CALL:
 
@@ -58,17 +58,16 @@ WriteFile's integer/pointer interface maps as follows, before CALL:
 DWORD is always four bytes on Windows, including Windows x64.
 lpNumberOfBytesWritten is an eight-byte POINTER to a four-byte DWORD.
 
-The example uses a synchronous standard-output handle and NULL for
-lpOverlapped. NULL alone does not turn an asynchronous handle into a
-synchronous one.
+The example uses a synchronous standard-output handle and NULL for lpOverlapped.
+NULL alone does not turn an asynchronous handle into a synchronous one.
 
-WriteFile returns a BOOL in EAX: nonzero for success, zero for failure in
-this synchronous use. The byte count is written through the fourth
-argument; it is NOT the return value. Test the return before relying on
-the count in code that handles failures.
+WriteFile returns a BOOL in EAX: nonzero for success, zero for failure in this
+synchronous use. The byte count is written through the fourth argument; it is
+NOT the return value. Test the return before relying on the count in code that
+handles failures.
 
 3. PLAN THE CALL'S STORAGE
--------------------------
+--------------------------
 
 hello.asm makes no register PUSHes. It reserves:
 
@@ -79,9 +78,9 @@ hello.asm makes no register PUSHes. It reserves:
     ----
     38h  total allocation
 
-The DWORD only needs four bytes. This example chooses an eight-byte slot
-for clarity; the other four bytes are unused, not part of the output value.
-Local variables are not required to occupy eight-byte slots.
+The DWORD only needs four bytes. This example chooses an eight-byte slot for
+clarity; the other four bytes are unused, not part of the output value. Local
+variables are not required to occupy eight-byte slots.
 
 Entry RSP is 8 modulo 16. Subtracting 30h would leave that unchanged;
 subtracting 38h aligns it. For example, 1008h - 38h = 0FD0h.
@@ -95,44 +94,44 @@ After the SUB, measure every offset from the CURRENT RSP:
     [rsp+30h .. rsp+37h]  alignment padding
     [rsp+38h .. rsp+3Fh]  our incoming return address
 
-With only shadow space and one stack argument, and no local, 28h would
-already suffice. Padding is derived from the whole frame, not added
-automatically because there is a fifth argument.
+With only shadow space and one stack argument, and no local, 28h would already
+suffice. Padding is derived from the whole frame, not added automatically
+because there is a fifth argument.
 
 The source prepares two different objects:
 
     lea r9, [rsp+28h]            address of our writable DWORD
     mov qword ptr [rsp+20h], 0   NULL pointer value for argument 5
 
-QWORD PTR specifies an eight-byte store. With an immediate source, MASM
-needs a size because [rsp+20h] alone does not say how many bytes to write.
-PTR is an assembler type qualifier, not an extra CPU operation.
+QWORD PTR specifies an eight-byte store. With an immediate source, MASM needs a
+size because [rsp+20h] alone does not say how many bytes to write. PTR is an
+assembler type qualifier, not an extra CPU operation.
 
-CALL lowers RSP by eight. WriteFile sees its fifth argument at entry
-[rsp+28h], but our code writes it at pre-call [rsp+20h]. The pointer in R9
-does not need adjustment when RSP changes.
+CALL lowers RSP by eight. WriteFile sees its fifth argument at entry [rsp+28h],
+but our code writes it at pre-call [rsp+20h]. The pointer in R9 does not need
+adjustment when RSP changes.
 
 Checkpoint: if caller RSP is 1000h, calculate the two absolute addresses
 passed/stored above. Then express them relative to callee entry RSP.
 
 4. VALUES THAT MUST SURVIVE CALLS
--------------------------------
+---------------------------------
 
-RAX, RCX, RDX, R8-R11 are volatile: a called function may overwrite them.
-After GetStdHandle we immediately move its result to RCX for WriteFile.
-After WriteFile we must not expect either register to still hold the handle.
+RAX, RCX, RDX, R8-R11 are volatile: a called function may overwrite them. After
+GetStdHandle we immediately move its result to RCX for WriteFile. After
+WriteFile we must not expect either register to still hold the handle.
 
 For repeated writes in an exercise, save the handle in your own storage:
 
     .data?
     std_out dq ?
 
-After GetStdHandle, store RAX in std_out; reload RCX from it for EACH write.
-Set up every other argument again too. Reuse the reserved outgoing space;
-there is no need to grow the frame between consecutive calls.
+After GetStdHandle, store RAX in std_out; reload RCX from it for EACH write. Set
+up every other argument again too. Reuse the reserved outgoing space; there is
+no need to grow the frame between consecutive calls.
 
-Do not save a live handle in outgoing shadow space: that area belongs to
-the callee during the call. Saved registers are introduced in Lessons 3-4.
+Do not save a live handle in outgoing shadow space: that area belongs to the
+callee during the call. Saved registers are introduced in Lessons 3-4.
 
 5. BUILD AND SCOPE
 ------------------
@@ -141,15 +140,13 @@ the callee during the call. Saved registers are introduced in Lessons 3-4.
     .\hello.exe
     $LASTEXITCODE
 
-Expect "Hello from x64 assembly!" followed by CRLF, then a status of 0.
-This first output example assumes a valid, synchronous standard output and
-does not check API failure. Its chosen status 0 is not proof of successful
-I/O. Lesson 4 adds a returning helper with explicit failure paths.
+Expect "Hello from x64 assembly!" followed by CRLF, then a status of 0. This
+first output example assumes a valid, synchronous standard output and does not
+check API failure. Its chosen status 0 is not proof of successful I/O. Lesson 4
+adds a returning helper with explicit failure paths.
 
 Continue with exercises.txt. References:
 
     ..\concepts\windows-x64-calling-convention.txt
     ..\concepts\caller-vs-callee-rsp.txt
     ..\concepts\stack-alignment.txt
-    https://learn.microsoft.com/en-us/windows/console/getstdhandle
-    https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-writefile

@@ -1,14 +1,14 @@
 LESSON 2: PREREQUISITES
-======================
+=======================
 
 From Lesson 1:
-  [ ] Build an executable and distinguish its output from its exit status.
-  [ ] Explain EXTERN, the import library, and the selected entry symbol.
-  [ ] Derive the example's 28h allocation from storage and alignment.
-  [ ] Explain what writing ECX does to RCX.
+  * Build an executable and distinguish its output from its exit status.
+  * Explain EXTERN, the import library, and the selected entry symbol.
+  * Derive the example's 28h allocation from storage and alignment.
+  * Explain what writing ECX does to RCX.
 
 Review ..\01-exit\lesson.txt if needed.
-Pointers to output variables, memory operand sizes, and fifth arguments
-are introduced here; you are not expected to know them beforehand.
+Pointers to output variables, memory operand sizes, and fifth arguments are
+introduced here; you are not expected to know them beforehand.
 
 Next: objectives.txt, then lesson.txt.
