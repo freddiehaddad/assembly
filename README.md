@@ -70,13 +70,23 @@ directory contains exactly one `.asm` file. Without `-NoRun`, the script also ru
 the executable and returns its exit status. A deliberate status such as 42 in
 Lesson 1 is not an assembly or link failure.
 
-`-Debug` adds debugger information and builds without running. For a manual build:
+Builds include debug information by default. Use `-NoDebug` to omit it.
+`-NoRun` only controls execution, so it works with either build mode. To prepare
+an executable for WinDbgX, use `-NoRun` as above; the script does not launch a
+debugger.
+
+An older `.pdb` can remain beside a `-NoDebug` build; the new executable does
+not reference it.
+
+For an equivalent manual debug build:
 
 ```powershell
-ml64 /nologo /c /Fo exit.obj exit.asm
-link /nologo /machine:x64 /subsystem:console /entry:main /nodefaultlib exit.obj kernel32.lib /out:exit.exe
+ml64 /nologo /Zi /c /Fo exit.obj exit.asm
+link /nologo /machine:x64 /subsystem:console /entry:main /nodefaultlib `
+     /incremental:no /debug /pdb:exit.pdb exit.obj kernel32.lib /out:exit.exe
 ```
 
+To omit debug information manually, omit `/Zi`, `/debug`, and `/pdb:exit.pdb`.
 Use the manual linker command when an exercise changes the entry symbol.
 
 For a first debugging session, follow `lessons\concepts\windbg.txt`. It walks

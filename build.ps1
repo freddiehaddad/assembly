@@ -5,18 +5,20 @@ Assemble and link a single-source Windows x64 lesson program.
 .DESCRIPTION
 Run in a Visual Studio x64 developer environment. The entry symbol is main.
 Select a source explicitly when the directory contains more than one .asm file.
-By default, also run the program and return its exit status.
+By default, include debug symbols, run the program and return its exit status.
+Use -NoDebug to omit debug information and -NoRun to build without running.
+These switches are independent; neither option launches a debugger.
 
 .EXAMPLE
 ..\..\build.ps1 -Source exit.asm -NoRun
 
 .EXAMPLE
-..\..\build.ps1 -Source args.asm -Debug
+..\..\build.ps1 -Source args.asm -NoDebug
 #>
 
 param(
     [string]$Source,
-    [switch]$Debug,
+    [switch]$NoDebug,
     [switch]$NoRun
 )
 
@@ -52,7 +54,7 @@ $linkArguments = @(
     '/nodefaultlib', '/incremental:no', $objFile, 'kernel32.lib', "/out:$exeFile"
 )
 
-if ($Debug) {
+if (-not $NoDebug) {
     $asmArguments += '/Zi'
     $pdbFile = [System.IO.Path]::ChangeExtension($asmFile.FullName, '.pdb')
     $linkArguments += @('/debug', "/pdb:$pdbFile")
@@ -70,7 +72,7 @@ if ($LASTEXITCODE -ne 0) {
     throw "Link failed (exit code $LASTEXITCODE)."
 }
 
-if ($NoRun -or $Debug) {
+if ($NoRun) {
     return
 }
 

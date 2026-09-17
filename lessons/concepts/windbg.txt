@@ -13,10 +13,12 @@ walkthrough uses WinDbg's Command window rather than toolbar shortcuts.
 
 In a Visual Studio x64 developer PowerShell, from the Lesson 1 directory:
 
-    ..\..\build.ps1 -Source exit.asm -Debug
+    ..\..\build.ps1 -Source exit.asm -NoRun
 
-The script assembles with /Zi and links with /debug. It builds without running,
-leaving these files together:
+Debug information is enabled by default: the script assembles with /Zi and
+links with /debug. -NoRun skips execution so you can launch the program in the
+debugger instead. Do not use -NoDebug for this walkthrough. The build leaves
+these files together:
 
     exit.exe   machine code and executable metadata
     exit.pdb   symbols and mappings between code addresses and source lines
@@ -201,8 +203,8 @@ ExitProcess ends the process; there is no return to step past.
 .restart also works after a launched program exits; it is not available for a
 process you merely attached to. At the initial stop, use bl to check the main
 breakpoint, set bu exit!main if needed, then g to reach it. If you edit source,
-end the old debugging session, rebuild with -Debug, and launch the newly built
-executable so source and symbols still match.
+end the old debugging session, rebuild with -NoRun (without -NoDebug), and
+launch the newly built executable so source and symbols still match.
 
 If old search paths reappear, inspect .sympath and .srcpath without arguments.
 Check saved debugger settings and symbol-path environment variables such as
