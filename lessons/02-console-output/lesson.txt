@@ -51,9 +51,9 @@ WriteFile's integer/pointer interface maps as follows, before CALL:
     Parameter                 Type            Location
     hFile                     HANDLE          RCX
     lpBuffer                  pointer         RDX
-    nNumberOfBytesToWrite      DWORD           R8D
-    lpNumberOfBytesWritten     pointer         R9
-    lpOverlapped               pointer         [rsp+20h]
+    nNumberOfBytesToWrite     DWORD           R8D
+    lpNumberOfBytesWritten    pointer         R9
+    lpOverlapped              pointer         [rsp+20h]
 
 DWORD is always four bytes on Windows, including Windows x64.
 lpNumberOfBytesWritten is an eight-byte POINTER to a four-byte DWORD.
